@@ -1,7 +1,7 @@
 "use client"
 
 import { Bell, User, LogOut } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button } from '../../components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,8 +9,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Badge } from '@/components/ui/badge'
+} from '../../components/ui/dropdown-menu'
+import { Badge } from '../../components/ui/badge'
 
 export default function Header() {
   return (

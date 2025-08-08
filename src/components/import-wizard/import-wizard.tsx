@@ -2,14 +2,14 @@
 
 import { useState, useCallback } from 'react'
 import { Upload, FileSpreadsheet, ArrowRight, ArrowLeft, Check, AlertCircle, Download, X } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '../../components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../components/ui/dialog'
+import { Badge } from '../../components/ui/badge'
+import { Progress } from '../../components/ui/progress'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table'
+import { Alert, AlertDescription } from '../../components/ui/alert'
 import { useDropzone } from 'react-dropzone'
 
 interface ImportWizardProps {
@@ -21,7 +21,7 @@ interface FileData {
   name: string
   size: number
   headers: string[]
-  preview: any[][]
+  preview: string[][]
   totalRows: number
 }
 
@@ -45,11 +45,16 @@ export default function ImportWizard({ isOpen, onClose }: ImportWizardProps) {
   const [fileData, setFileData] = useState<FileData | null>(null)
   const [columnMapping, setColumnMapping] = useState<ColumnMapping>({})
   const [isProcessing, setIsProcessing] = useState(false)
+  interface ImportErrorRow {
+    row: number
+    error: string
+  }
+
   const [importResults, setImportResults] = useState<{
     total: number
     success: number
     errors: number
-    errorRows: any[]
+    errorRows: ImportErrorRow[]
   } | null>(null)
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -184,7 +189,7 @@ export default function ImportWizard({ isOpen, onClose }: ImportWizardProps) {
                   📤 Upload Inventory File
                 </CardTitle>
                 <CardDescription>
-                  Import medicines using an Excel (.xlsx) or CSV file. We'll guide you through matching your columns.
+                 { `Import medicines using an Excel (.xlsx) or CSV file. We'll guide you through matching your columns.`}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -401,7 +406,7 @@ export default function ImportWizard({ isOpen, onClose }: ImportWizardProps) {
                     <Alert>
                       <AlertCircle className="h-4 w-4" />
                       <AlertDescription>
-                        We've detected 4 rows with potential issues. These will be skipped during import and can be reviewed later.
+                        {`We've detected 4 rows with potential issues. These will be skipped during import and can be reviewed later.`}
                       </AlertDescription>
                     </Alert>
 

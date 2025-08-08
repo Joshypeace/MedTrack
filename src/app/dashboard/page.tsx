@@ -1,11 +1,11 @@
 "use client"
 
-import { TrendingUp, Package, AlertTriangle, Calendar, DollarSign, Users } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import Sidebar from '@/components/layout/sidebar'
-import Header from '@/components/layout/header'
-import { Bar, BarChart, Pie, PieChart, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts'
+import { TrendingUp, AlertTriangle, Calendar, DollarSign, Users } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
+import { Badge } from '../../components/ui/badge'
+import Sidebar from '../../components/layout/sidebar'
+import Header from '../../components/layout/header'
+import { Bar, BarChart, Pie, PieChart, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts'
 
 const salesData = [
   { name: 'Mon', sales: 4000 },
@@ -35,7 +35,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Today's Sales</CardTitle>
+                <CardTitle className="text-sm font-medium">{`Today's Sales`}</CardTitle>
                 <DollarSign className="h-4 w-4" />
               </CardHeader>
               <CardContent>
@@ -122,7 +122,7 @@ export default function DashboardPage() {
                       cy="50%"
                       outerRadius={80}
                       dataKey="value"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
                     >
                       {stockData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
