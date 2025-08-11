@@ -2,16 +2,16 @@
 
 import { useState } from 'react'
 import { Save, Building, Bell, Shield, Database, Download } from 'lucide-react'
-import { Button } from '../../components/ui/button'
-import { Input } from '../../components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
-import { Label } from '../../components/ui/label'
-import { Textarea } from '../../components/ui/textarea'
-import { Switch } from '../../components/ui/switch'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select'
-import { Separator } from '../../components/ui/separator'
-import Sidebar from '../../components/layout/sidebar'
-import Header from '../../components/layout/header'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Separator } from '@/components/ui/separator'
+import Sidebar from '@/components/layout/sidebar'
+import Header from '@/components/layout/header'
 
 export default function SettingsPage() {
   const [lowStockThreshold, setLowStockThreshold] = useState('10')

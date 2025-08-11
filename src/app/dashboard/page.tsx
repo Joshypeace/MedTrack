@@ -1,10 +1,10 @@
 "use client"
 
 import { TrendingUp, AlertTriangle, Calendar, DollarSign, Users } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
-import { Badge } from '../../components/ui/badge'
-import Sidebar from '../../components/layout/sidebar'
-import Header from '../../components/layout/header'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import Sidebar from '@/components/layout/sidebar'
+import Header from '@/components/layout/header'
 import { Bar, BarChart, Pie, PieChart, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts'
 
 const salesData = [

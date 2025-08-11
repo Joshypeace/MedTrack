@@ -1,6 +1,6 @@
 // prisma/seed.ts
 import { PrismaClient, Role } from '@prisma/client'
-import { hashPassword } from '../src/lib/hash'
+import { hashPassword } from '@/lib/hash'
 
 const prisma = new PrismaClient()
 

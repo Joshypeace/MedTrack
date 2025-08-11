@@ -2,14 +2,14 @@
 
 import { useState, useCallback } from 'react'
 import { Upload, FileSpreadsheet, ArrowRight, ArrowLeft, Check, AlertCircle, Download, X } from 'lucide-react'
-import { Button } from '../../components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../components/ui/dialog'
-import { Badge } from '../../components/ui/badge'
-import { Progress } from '../../components/ui/progress'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table'
-import { Alert, AlertDescription } from '../../components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useDropzone } from 'react-dropzone'
 
 interface ImportWizardProps {
