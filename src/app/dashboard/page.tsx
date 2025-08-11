@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge'
 import Sidebar from '@/components/layout/sidebar'
 import Header from '@/components/layout/header'
 import { Bar, BarChart, Pie, PieChart, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts'
+import { SessionProvider, useSession } from 'next-auth/react'
+
 
 const salesData = [
   { name: 'Mon', sales: 4000 },
@@ -25,6 +27,7 @@ const stockData = [
 ]
 
 export default function DashboardPage() {
+
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
