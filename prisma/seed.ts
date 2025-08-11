@@ -1,8 +1,18 @@
 // prisma/seed.ts
 import { PrismaClient, Role } from '@prisma/client'
-import { hashPassword } from '@/lib/hash'
+import bcrypt from 'bcrypt'
+import { fileURLToPath } from 'url'
+import path from 'path'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const prisma = new PrismaClient()
+
+const SALT_ROUNDS = 12
+
+async function hashPassword(password: string): Promise<string> {
+  return await bcrypt.hash(password, SALT_ROUNDS)
+}
 
 async function main() {
   // Create admin user
@@ -27,7 +37,7 @@ async function main() {
     },
   })
 
-  // Create some inventory items
+  // Create inventory items
   await prisma.inventoryItem.createMany({
     data: [
       {
@@ -53,11 +63,13 @@ async function main() {
       },
     ],
   })
+
+  console.log('🌱 Database seeded successfully')
 }
 
 main()
   .catch((e) => {
-    console.error(e)
+    console.error('Error during seeding:', e)
     process.exit(1)
   })
   .finally(async () => {
