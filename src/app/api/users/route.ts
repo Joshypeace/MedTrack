@@ -1,14 +1,15 @@
 // app/api/users/route.ts
 import { prisma } from '@/lib/prisma'
-import { auth } from '@/lib/auth'
+import { authOptions } from '@/lib/auth'
 import { NextResponse } from 'next/server'
 import { Role } from '@prisma/client'
 import { hashPassword } from '@/lib/hash'
 import { ActivityType } from '@prisma/client'
+import { getServerSession } from 'next-auth'
 
 // GET all users (ADMIN only)
 export async function GET() {
-  const session = await auth()
+  const session = await getServerSession(authOptions)
   if (!session?.user || session.user.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -36,7 +37,7 @@ export async function GET() {
 
 // POST create new user (ADMIN only)
 export async function POST(request: Request) {
-  const session = await auth()
+  const session = await getServerSession(authOptions)
   if (!session?.user || session.user.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -105,7 +106,7 @@ export async function POST(request: Request) {
 
 // PUT update user (ADMIN only)
 export async function PUT(request: Request) {
-  const session = await auth()
+  const session = await getServerSession(authOptions)
   if (!session?.user || session.user.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -169,7 +170,7 @@ export async function PUT(request: Request) {
 
 // DELETE user (ADMIN only)
 export async function DELETE(request: Request) {
-  const session = await auth()
+  const session = await getServerSession(authOptions)
   if (!session?.user || session.user.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }

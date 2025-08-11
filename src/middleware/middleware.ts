@@ -1,5 +1,6 @@
 // middleware.ts
-import { auth } from '@/lib/auth'
+import { authOptions } from '@/lib/auth'
+import { getServerSession } from 'next-auth'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
@@ -7,7 +8,7 @@ const ADMIN_ROUTES = ['/api/inventory', '/api/logs']
 const WORKER_ROUTES = ['/api/sales']
 
 export async function middleware(request: NextRequest) {
-  const session = await auth()
+  const session = await getServerSession(authOptions)
   const pathname = request.nextUrl.pathname
 
   // Redirect to login if not authenticated
