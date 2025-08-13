@@ -6,27 +6,86 @@ import { Badge } from '@/components/ui/badge'
 import Sidebar from '@/components/layout/sidebar'
 import Header from '@/components/layout/header'
 import { Bar, BarChart, Pie, PieChart, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts'
-import { SessionProvider, useSession } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
+import { useEffect, useState } from 'react'
 
-
-const salesData = [
-  { name: 'Mon', sales: 4000 },
-  { name: 'Tue', sales: 3000 },
-  { name: 'Wed', sales: 2000 },
-  { name: 'Thu', sales: 2780 },
-  { name: 'Fri', sales: 1890 },
-  { name: 'Sat', sales: 2390 },
-  { name: 'Sun', sales: 3490 },
-]
-
-const stockData = [
-  { name: 'Antibiotics', value: 400, color: '#10B981' },
-  { name: 'Pain Relief', value: 300, color: '#3B82F6' },
-  { name: 'Vitamins', value: 200, color: '#F59E0B' },
-  { name: 'Others', value: 100, color: '#EF4444' },
-]
+interface DashboardData {
+  todaySales: number
+  yesterdaySales: number
+  lowStockItems: number
+  expiringSoonItems: number
+  activeUsers: number
+  weeklySales: Array<{ name: string; sales: number }>
+  stockDistribution: Array<{ name: string; value: number; color: string }>
+  topDrugs: Array<{ name: string; quantity: string; trend: string }>
+  stockAlerts: Array<{ name: string; status: string; level: string; type: 'warning' | 'danger' }>
+}
 
 export default function DashboardPage() {
+  const { data: session } = useSession()
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (session?.user?.email) {
+      fetchDashboardData()
+    }
+  }, [session])
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/dashboard')
+      if (!response.ok) {
+        throw new Error('Failed to fetch dashboard data')
+      }
+      const data = await response.json()
+      setDashboardData(data)
+    } catch (err) {
+      console.error('Failed to fetch dashboard data:', err)
+      setError(err instanceof Error ? err.message : 'Unknown error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex h-screen bg-gray-50">
+        <Sidebar />
+        <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
+          <Header />
+          <main className="flex-1 overflow-x-hidden overflow-y-auto p-6 flex items-center justify-center">
+            <div>Loading dashboard data...</div>
+          </main>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-screen bg-gray-50">
+        <Sidebar />
+        <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
+          <Header />
+          <main className="flex-1 overflow-x-hidden overflow-y-auto p-6 flex items-center justify-center">
+            <div className="text-red-500">Error: {error}</div>
+          </main>
+        </div>
+      </div>
+    )
+  }
+
+  if (!dashboardData) {
+    return null
+  }
+
+  // Calculate sales percentage change
+  const salesChange = dashboardData.yesterdaySales > 0 
+    ? ((dashboardData.todaySales - dashboardData.yesterdaySales) / dashboardData.yesterdaySales) * 100
+    : 0
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -36,53 +95,57 @@ export default function DashboardPage() {
         <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {/* Sales Card */}
             <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">{`Today's Sales`}</CardTitle>
                 <DollarSign className="h-4 w-4" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">MWK 45,231</div>
+                <div className="text-2xl font-bold">MWK {dashboardData.todaySales.toLocaleString()}</div>
                 <p className="text-xs opacity-90">
                   <TrendingUp className="inline h-3 w-3 mr-1" />
-                  +20.1% from yesterday
+                  {salesChange > 0 ? '+' : ''}{salesChange.toFixed(1)}% from yesterday
                 </p>
               </CardContent>
             </Card>
 
+            {/* Low Stock Card */}
             <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Low Stock Items</CardTitle>
                 <AlertTriangle className="h-4 w-4" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">12</div>
+                <div className="text-2xl font-bold">{dashboardData.lowStockItems}</div>
                 <p className="text-xs opacity-90">
                   Items need restocking
                 </p>
               </CardContent>
             </Card>
 
+            {/* Expiring Soon Card */}
             <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Expiring Soon</CardTitle>
                 <Calendar className="h-4 w-4" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">8</div>
+                <div className="text-2xl font-bold">{dashboardData.expiringSoonItems}</div>
                 <p className="text-xs opacity-90">
                   Items expire within 30 days
                 </p>
               </CardContent>
             </Card>
 
+            {/* Active Users Card */}
             <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Active Users</CardTitle>
                 <Users className="h-4 w-4" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">6</div>
+                <div className="text-2xl font-bold">{dashboardData.activeUsers}</div>
                 <p className="text-xs opacity-90">
                   Staff members online
                 </p>
@@ -90,6 +153,7 @@ export default function DashboardPage() {
             </Card>
           </div>
 
+          {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             {/* Sales Chart */}
             <Card>
@@ -99,7 +163,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={salesData}>
+                  <BarChart data={dashboardData.weeklySales}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
@@ -110,7 +174,7 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            {/* Stock Distribution */}
+            {/* Stock Distribution Chart */}
             <Card>
               <CardHeader>
                 <CardTitle>Stock Distribution</CardTitle>
@@ -120,14 +184,14 @@ export default function DashboardPage() {
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
-                      data={stockData}
+                      data={dashboardData.stockDistribution}
                       cx="50%"
                       cy="50%"
                       outerRadius={80}
                       dataKey="value"
                       label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
                     >
-                      {stockData.map((entry, index) => (
+                      {dashboardData.stockDistribution.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
@@ -138,8 +202,9 @@ export default function DashboardPage() {
             </Card>
           </div>
 
-          {/* Recent Activity & Alerts */}
+          {/* Bottom Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Top Drugs */}
             <Card>
               <CardHeader>
                 <CardTitle>Most Dispensed Drugs</CardTitle>
@@ -147,12 +212,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {[
-                    { name: 'Paracetamol 500mg', quantity: '245 tablets', trend: '+12%' },
-                    { name: 'Amoxicillin 250mg', quantity: '189 capsules', trend: '+8%' },
-                    { name: 'Ibuprofen 400mg', quantity: '156 tablets', trend: '+15%' },
-                    { name: 'Vitamin C 1000mg', quantity: '134 tablets', trend: '+5%' },
-                  ].map((drug, index) => (
+                  {dashboardData.topDrugs.map((drug, index) => (
                     <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div>
                         <p className="font-medium text-gray-900">{drug.name}</p>
@@ -167,6 +227,7 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
+            {/* Stock Alerts */}
             <Card>
               <CardHeader>
                 <CardTitle>Stock Alerts</CardTitle>
@@ -174,12 +235,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {[
-                    { name: 'Aspirin 75mg', status: 'Low Stock', level: '5 remaining', type: 'warning' },
-                    { name: 'Insulin Glargine', status: 'Expires Soon', level: 'Exp: 15 Jan 2024', type: 'danger' },
-                    { name: 'Metformin 500mg', status: 'Low Stock', level: '8 remaining', type: 'warning' },
-                    { name: 'Omeprazole 20mg', status: 'Out of Stock', level: '0 remaining', type: 'danger' },
-                  ].map((alert, index) => (
+                  {dashboardData.stockAlerts.map((alert, index) => (
                     <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div className="flex items-center space-x-3">
                         <div className={`w-2 h-2 rounded-full ${
