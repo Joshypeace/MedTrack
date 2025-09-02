@@ -44,7 +44,7 @@ model InventoryItem {
   expiryDate DateTime?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
-  batch      String
+  batch      String?
   sales      Sale[]
 }
 
