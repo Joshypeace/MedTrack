@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Search, Filter, Plus, Edit, Trash2, Package, Calendar, AlertTriangle, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,65 +13,57 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import Sidebar from '@/components/layout/sidebar'
 import Header from '@/components/layout/header'
 import ImportWizard from '@/components/import-wizard/import-wizard'
+import { useInventoryUpdates } from '@/hooks/useInventoryUpdates'
+import { toast } from 'sonner'
 
-const inventoryData = [
-  {
-    id: 1,
-    name: 'Paracetamol 500mg',
-    batch: 'PAR001',
-    quantity: 245,
-    expiry: '2024-12-15',
-    supplier: 'PharmaCorp Ltd',
-    category: 'Pain Relief',
-    status: 'In Stock'
-  },
-  {
-    id: 2,
-    name: 'Amoxicillin 250mg',
-    batch: 'AMX002',
-    quantity: 8,
-    expiry: '2024-03-20',
-    supplier: 'MedSupply Co',
-    category: 'Antibiotics',
-    status: 'Low Stock'
-  },
-  {
-    id: 3,
-    name: 'Insulin Glargine',
-    batch: 'INS003',
-    quantity: 15,
-    expiry: '2024-01-15',
-    supplier: 'DiabetesCare Inc',
-    category: 'Diabetes',
-    status: 'Expires Soon'
-  },
-  {
-    id: 4,
-    name: 'Vitamin C 1000mg',
-    batch: 'VIT004',
-    quantity: 134,
-    expiry: '2025-06-30',
-    supplier: 'VitaHealth Ltd',
-    category: 'Vitamins',
-    status: 'In Stock'
-  },
-  {
-    id: 5,
-    name: 'Omeprazole 20mg',
-    batch: 'OME005',
-    quantity: 0,
-    expiry: '2024-08-10',
-    supplier: 'GastroMed Co',
-    category: 'Gastric',
-    status: 'Out of Stock'
-  }
-]
+interface InventoryItem {
+  id: string
+  name: string
+  batch: string
+  quantity: number
+  expiry: string
+  supplier: string
+  category: string
+  status: string
+}
 
 export default function InventoryPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isImportWizardOpen, setIsImportWizardOpen] = useState(false)
+  const [inventoryData, setInventoryData] = useState<InventoryItem[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [newItem, setNewItem] = useState({
+    name: '',
+    batch: '',
+    quantity: 0,
+    expiry: '',
+    supplier: '',
+    category: '',
+    price: 0
+  })
+
+
+  const fetchInventoryData = useCallback(async () => {
+    try {
+      setIsLoading(true)
+      const response = await fetch(
+        `/api/inventory?search=${searchTerm}&category=${selectedCategory === 'all' ? '' : selectedCategory}`
+      )
+      const data = await response.json()
+      setInventoryData(data)
+    } catch (error) {
+      console.error('Error fetching inventory:', error)
+      toast.error('Failed to load inventory data')
+    } finally {
+      setIsLoading(false)
+    }
+  },
+
+   [searchTerm, selectedCategory])
+
+   useInventoryUpdates(fetchInventoryData)
 
   const getStatusBadge = (status: string, quantity: number) => {
     if (quantity === 0) {
@@ -85,12 +77,70 @@ export default function InventoryPage() {
     }
   }
 
+  const handleAddItem = async () => {
+    try {
+      const response = await fetch('/api/inventory', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newItem),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to add item')
+      }
+
+      toast.success('Item added successfully')
+      setIsAddModalOpen(false)
+      setNewItem({
+        name: '',
+        batch: '',
+        quantity: 0,
+        expiry: '',
+        supplier: '',
+        category: '',
+        price: 0
+      })
+      fetchInventoryData()
+    } catch (error) {
+      console.error('Error adding item:', error)
+      toast.error('Failed to add item')
+    }
+  }
+
+  const handleDeleteItem = async (id: string) => {
+    try {
+      const response = await fetch(`/api/inventory/${id}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete item')
+      }
+
+      toast.success('Item deleted successfully')
+      fetchInventoryData()
+    } catch (error) {
+      console.error('Error deleting item:', error)
+      toast.error('Failed to delete item')
+    }
+  }
+
   const filteredData = inventoryData.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          item.batch.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory
     return matchesSearch && matchesCategory
   })
+
+  // Calculate summary stats
+  const summaryStats = {
+    totalItems: inventoryData.length,
+    lowStock: inventoryData.filter(item => item.quantity < 10 && item.quantity > 0).length,
+    expiringSoon: inventoryData.filter(item => item.status === 'Expires Soon').length,
+    outOfStock: inventoryData.filter(item => item.quantity === 0).length,
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -112,7 +162,7 @@ export default function InventoryPage() {
                 <Package className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">402</div>
+                <div className="text-2xl font-bold">{summaryStats.totalItems}</div>
                 <p className="text-xs text-muted-foreground">Different medications</p>
               </CardContent>
             </Card>
@@ -123,7 +173,7 @@ export default function InventoryPage() {
                 <AlertTriangle className="h-4 w-4 text-orange-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-orange-600">12</div>
+                <div className="text-2xl font-bold text-orange-600">{summaryStats.lowStock}</div>
                 <p className="text-xs text-muted-foreground">Items below threshold</p>
               </CardContent>
             </Card>
@@ -134,7 +184,7 @@ export default function InventoryPage() {
                 <Calendar className="h-4 w-4 text-yellow-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-yellow-600">8</div>
+                <div className="text-2xl font-bold text-yellow-600">{summaryStats.expiringSoon}</div>
                 <p className="text-xs text-muted-foreground">Within 30 days</p>
               </CardContent>
             </Card>
@@ -145,7 +195,7 @@ export default function InventoryPage() {
                 <Package className="h-4 w-4 text-red-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-red-600">3</div>
+                <div className="text-2xl font-bold text-red-600">{summaryStats.outOfStock}</div>
                 <p className="text-xs text-muted-foreground">Items unavailable</p>
               </CardContent>
             </Card>
@@ -184,47 +234,86 @@ export default function InventoryPage() {
                       <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
                           <Label htmlFor="medicine-name">Medicine Name</Label>
-                          <Input id="medicine-name" placeholder="e.g., Paracetamol 500mg" />
+                          <Input
+                            id="medicine-name"
+                            placeholder="e.g., Paracetamol 500mg"
+                            value={newItem.name}
+                            onChange={(e) => setNewItem({...newItem, name: e.target.value})}
+                          />
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor="batch-number">Batch Number</Label>
-                          <Input id="batch-number" placeholder="e.g., PAR001" />
+                          <Input
+                            id="batch-number"
+                            placeholder="e.g., PAR001"
+                            value={newItem.batch}
+                            onChange={(e) => setNewItem({...newItem, batch: e.target.value})}
+                          />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="grid gap-2">
                             <Label htmlFor="quantity">Quantity</Label>
-                            <Input id="quantity" type="number" placeholder="100" />
+                            <Input
+                              id="quantity"
+                              type="number"
+                              placeholder="100"
+                              value={newItem.quantity}
+                              onChange={(e) => setNewItem({...newItem, quantity: Number(e.target.value)})}
+                            />
                           </div>
                           <div className="grid gap-2">
                             <Label htmlFor="expiry-date">Expiry Date</Label>
-                            <Input id="expiry-date" type="date" />
+                            <Input
+                              id="expiry-date"
+                              type="date"
+                              value={newItem.expiry}
+                              onChange={(e) => setNewItem({...newItem, expiry: e.target.value})}
+                            />
                           </div>
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor="supplier">Supplier</Label>
-                          <Input id="supplier" placeholder="e.g., PharmaCorp Ltd" />
+                          <Input
+                            id="supplier"
+                            placeholder="e.g., PharmaCorp Ltd"
+                            value={newItem.supplier}
+                            onChange={(e) => setNewItem({...newItem, supplier: e.target.value})}
+                          />
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor="category">Category</Label>
-                          <Select>
+                          <Select
+                            value={newItem.category}
+                            onValueChange={(value) => setNewItem({...newItem, category: value})}
+                          >
                             <SelectTrigger>
                               <SelectValue placeholder="Select category" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="antibiotics">Antibiotics</SelectItem>
-                              <SelectItem value="pain-relief">Pain Relief</SelectItem>
-                              <SelectItem value="vitamins">Vitamins</SelectItem>
-                              <SelectItem value="diabetes">Diabetes</SelectItem>
-                              <SelectItem value="gastric">Gastric</SelectItem>
+                              <SelectItem value="Antibiotics">Antibiotics</SelectItem>
+                              <SelectItem value="Pain Relief">Pain Relief</SelectItem>
+                              <SelectItem value="Vitamins">Vitamins</SelectItem>
+                              <SelectItem value="Diabetes">Diabetes</SelectItem>
+                              <SelectItem value="Gastric">Gastric</SelectItem>
                             </SelectContent>
                           </Select>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="price">Unit Price</Label>
+                          <Input
+                            id="price"
+                            type="number"
+                            placeholder="0.00"
+                            value={newItem.price}
+                            onChange={(e) => setNewItem({...newItem, price: Number(e.target.value)})}
+                          />
                         </div>
                       </div>
                       <div className="flex justify-end gap-2">
                         <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
                           Cancel
                         </Button>
-                        <Button className="bg-green-600 hover:bg-green-700">
+                        <Button onClick={handleAddItem} className="bg-green-600 hover:bg-green-700">
                           Add Medicine
                         </Button>
                       </div>
@@ -276,31 +365,50 @@ export default function InventoryPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredData.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-medium">{item.name}</TableCell>
-                        <TableCell>{item.batch}</TableCell>
-                        <TableCell>
-                          <span className={item.quantity < 10 ? 'text-orange-600 font-semibold' : ''}>
-                            {item.quantity}
-                          </span>
-                        </TableCell>
-                        <TableCell>{item.expiry}</TableCell>
-                        <TableCell>{item.supplier}</TableCell>
-                        <TableCell>{item.category}</TableCell>
-                        <TableCell>{getStatusBadge(item.status, item.quantity)}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="icon">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="text-red-600 hover:text-red-700">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                    {isLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-8">
+                          Loading inventory...
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ) : filteredData.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-8">
+                          No items found matching your criteria
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredData.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell className="font-medium">{item.name}</TableCell>
+                          <TableCell>{item.batch}</TableCell>
+                          <TableCell>
+                            <span className={item.quantity < 10 ? 'text-orange-600 font-semibold' : ''}>
+                              {item.quantity}
+                            </span>
+                          </TableCell>
+                          <TableCell>{item.expiry}</TableCell>
+                          <TableCell>{item.supplier}</TableCell>
+                          <TableCell>{item.category}</TableCell>
+                          <TableCell>{getStatusBadge(item.status, item.quantity)}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button variant="ghost" size="icon">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-red-600 hover:text-red-700"
+                                onClick={() => handleDeleteItem(item.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </div>
@@ -311,6 +419,7 @@ export default function InventoryPage() {
       <ImportWizard
         isOpen={isImportWizardOpen}
         onClose={() => setIsImportWizardOpen(false)}
+        onSuccess={fetchInventoryData}
       />
     </div>
   )

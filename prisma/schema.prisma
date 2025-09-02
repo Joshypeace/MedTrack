@@ -1,18 +1,71 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String        @id @default(cuid())
+  email     String        @unique
+  password  String
+  name      String
+  role      Role          @default(ADMIN)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  logs      ActivityLog[]
+  sales     Sale[]
+  pharmacy  Pharmacy?     @relation(fields: [pharmacyId], references: [id])
+  pharmacyId String?
+}
+
+model Pharmacy {
+  id            String    @id @default(cuid())
+  name          String    @unique
+  licenseNumber String    @unique
+  ownerName     String
+  email         String    @unique
+  phone         String
+  location      String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  users         User[]
+}
+
+model InventoryItem {
+  id         String    @id @default(cuid())
+  name       String
+  category   String
+  quantity   Int
+  price      Float
+  expiryDate DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  batch      String
+  sales      Sale[]
+}
+
+model Sale {
+  id         String        @id @default(cuid())
+  itemId     String
+  quantity   Int
+  totalPrice Float
+  createdAt  DateTime      @default(now())
+  userId     String
+  item       InventoryItem @relation(fields: [itemId], references: [id])
+  soldBy     User          @relation(fields: [userId], references: [id])
+}
+
+model ActivityLog {
+  id        String       @id @default(cuid())
+  type      ActivityType
+  message   String
+  createdAt DateTime     @default(now())
+  userId    String
+  user      User         @relation(fields: [userId], references: [id])
 }
 
 enum Role {
@@ -27,52 +80,4 @@ enum ActivityType {
   UPDATE_STOCK
   DELETE_STOCK
   SALE
-}
-
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String
-  role      Role     @default(WORKER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  sales     Sale[]
-  logs      ActivityLog[]
-}
-
-model InventoryItem {
-  id          String   @id @default(cuid())
-  name        String
-  category    String
-  quantity    Int
-  price       Float
-  expiryDate  DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  sales       Sale[]
-}
-
-model Sale {
-  id         String         @id @default(cuid())
-  item       InventoryItem  @relation(fields: [itemId], references: [id])
-  itemId     String
-  quantity   Int
-  totalPrice Float
-  createdAt  DateTime       @default(now())
-
-  soldBy     User           @relation(fields: [userId], references: [id])
-  userId     String
-}
-
-model ActivityLog {
-  id        String       @id @default(cuid())
-  type      ActivityType
-  message   String
-  createdAt DateTime     @default(now())
-
-  user      User         @relation(fields: [userId], references: [id])
-  userId    String
 }

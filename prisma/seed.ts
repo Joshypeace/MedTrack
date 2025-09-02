@@ -37,33 +37,7 @@ async function main() {
     },
   })
 
-  // Create inventory items
-  await prisma.inventoryItem.createMany({
-    data: [
-      {
-        name: 'Paracetamol 500mg',
-        category: 'Pain Relief',
-        quantity: 100,
-        price: 5.99,
-        expiryDate: new Date('2025-12-31'),
-      },
-      {
-        name: 'Ibuprofen 200mg',
-        category: 'Pain Relief',
-        quantity: 75,
-        price: 7.49,
-        expiryDate: new Date('2025-11-30'),
-      },
-      {
-        name: 'Amoxicillin 250mg',
-        category: 'Antibiotic',
-        quantity: 50,
-        price: 12.99,
-        expiryDate: new Date('2024-10-15'),
-      },
-    ],
-  })
-
+  
   console.log('🌱 Database seeded successfully')
 }
 

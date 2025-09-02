@@ -1,21 +1,51 @@
-// app/api/inventory/route.ts
-import { prisma } from '@/lib/prisma'
-import { authOptions } from '@/lib/auth'
+// src/app/api/inventory/route.ts
 import { NextResponse } from 'next/server'
-import { ActivityType } from '@prisma/client'
+import { PrismaClient } from '@prisma/client'
 import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { revalidatePath } from 'next/cache'
 
-export async function GET() {
+const prisma = new PrismaClient()
+
+// GET all inventory items with filtering 
+export async function GET(request: Request) {
   const session = await getServerSession(authOptions)
-  if (!session?.user) {
+  if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const { searchParams } = new URL(request.url)
+  const searchTerm = searchParams.get('search') || ''
+  const category = searchParams.get('category') || 'all'
+
   try {
     const items = await prisma.inventoryItem.findMany({
-      orderBy: { createdAt: 'desc' },
+      where: {
+        AND: [
+          {
+            OR: [
+              { name: { contains: searchTerm, mode: 'insensitive' } },
+              { category: { contains: searchTerm, mode: 'insensitive' } }
+            ]
+          },
+          category !== 'all' ? { category } : {}
+        ]
+      },
+      orderBy: { createdAt: 'desc' }
     })
-    return NextResponse.json(items)
+
+    // Transform data for frontend
+    const transformedItems = items.map(item => ({
+      id: item.id,
+      name: item.name,
+      batch: item.id.slice(0, 6).toUpperCase(), // Generate batch from ID for demo
+      quantity: item.quantity,
+      expiry: item.expiryDate?.toISOString().split('T')[0] || 'N/A',
+      category: item.category,
+      status: getItemStatus(item.quantity, item.expiryDate)
+    }))
+
+    return NextResponse.json(transformedItems)
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to fetch inventory' },
@@ -24,35 +54,36 @@ export async function GET() {
   }
 }
 
+// POST add new inventory item
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions)
-  if (!session?.user || session.user.role !== 'ADMIN') {
+  if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const body = await request.json()
+  
   try {
-    const data = await request.json()
-    const { name, category, quantity, price, expiryDate } = data
-
     const newItem = await prisma.inventoryItem.create({
       data: {
-        name,
-        category,
-        quantity,
-        price,
-        expiryDate: expiryDate ? new Date(expiryDate) : null,
-      },
+        name: body.name,
+        category: body.category,
+        quantity: Number(body.quantity),
+        price: Number(body.price) || 0,
+        expiryDate: body.expiry ? new Date(body.expiry) : null
+      }
     })
 
-    // Log the activity
+    // Log activity
     await prisma.activityLog.create({
       data: {
         type: 'ADD_STOCK',
-        message: `Added new inventory item: ${name} (${quantity} units)`,
-        userId: session.user.id,
-      },
+        message: `Added ${body.quantity} units of ${body.name}`,
+        userId: session.user.id
+      }
     })
 
+    revalidatePath('/inventory')
     return NextResponse.json(newItem, { status: 201 })
   } catch (error) {
     return NextResponse.json(
@@ -62,65 +93,19 @@ export async function POST(request: Request) {
   }
 }
 
-export async function PUT(request: Request) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user || session.user.role !== 'ADMIN') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+// Helper function to determine item status
+function getItemStatus(quantity: number, expiryDate: Date | null): string {
+  if (quantity === 0) return 'Out of Stock'
+  if (quantity < 10) return 'Low Stock'
+  
+  if (expiryDate) {
+    const today = new Date()
+    const expiry = new Date(expiryDate)
+    const diffTime = expiry.getTime() - today.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    
+    if (diffDays <= 30) return 'Expires Soon'
   }
-
-  try {
-    const data = await request.json()
-    const { id, ...updateData } = data
-
-    const updatedItem = await prisma.inventoryItem.update({
-      where: { id },
-      data: updateData,
-    })
-
-    // Log the activity
-    await prisma.activityLog.create({
-      data: {
-        type: 'UPDATE_STOCK',
-        message: `Updated inventory item: ${updatedItem.name}`,
-        userId: session.user.id,
-      },
-    })
-
-    return NextResponse.json(updatedItem)
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to update inventory item' },
-      { status: 500 }
-    )
-  }
-}
-
-export async function DELETE(request: Request) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user || session.user.role !== 'ADMIN') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  try {
-    const { id } = await request.json()
-    const deletedItem = await prisma.inventoryItem.delete({
-      where: { id },
-    })
-
-    // Log the activity
-    await prisma.activityLog.create({
-      data: {
-        type: 'DELETE_STOCK',
-        message: `Deleted inventory item: ${deletedItem.name}`,
-        userId: session.user.id,
-      },
-    })
-
-    return NextResponse.json(deletedItem)
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to delete inventory item' },
-      { status: 500 }
-    )
-  }
+  
+  return 'In Stock'
 }
