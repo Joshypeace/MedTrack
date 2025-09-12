@@ -1,13 +1,10 @@
-// src/app/api/inventory/route.ts
 import { NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 
-const prisma = new PrismaClient()
-
-// GET all inventory items with filtering 
+// GET all inventory items with filtering
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions)
   if (!session) {
@@ -25,28 +22,29 @@ export async function GET(request: Request) {
           {
             OR: [
               { name: { contains: searchTerm, mode: 'insensitive' } },
-              { category: { contains: searchTerm, mode: 'insensitive' } }
-            ]
+              { category: { contains: searchTerm, mode: 'insensitive' } },
+            ],
           },
-          category !== 'all' ? { category } : {}
-        ]
+          category !== 'all' ? { category } : {},
+        ],
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     })
 
-    // Transform data for frontend
-    const transformedItems = items.map(item => ({
+    // Transform and add status field
+    const transformed = items.map((item) => ({
       id: item.id,
       name: item.name,
-      batch: item.id.slice(0, 6).toUpperCase(), // Generate batch from ID for demo
+      batch: item.batch || item.id.slice(0, 6).toUpperCase(), // fallback if batch missing
       quantity: item.quantity,
       expiry: item.expiryDate?.toISOString().split('T')[0] || 'N/A',
       category: item.category,
-      status: getItemStatus(item.quantity, item.expiryDate)
+      status: getItemStatus(item.quantity, item.expiryDate),
     }))
 
-    return NextResponse.json(transformedItems)
+    return NextResponse.json(transformed)
   } catch (error) {
+    console.error('Error fetching inventory:', error)
     return NextResponse.json(
       { error: 'Failed to fetch inventory' },
       { status: 500 }
@@ -62,16 +60,18 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json()
-  
+
   try {
     const newItem = await prisma.inventoryItem.create({
       data: {
         name: body.name,
+        batch: body.batch || null,
         category: body.category,
         quantity: Number(body.quantity),
         price: Number(body.price) || 0,
-        expiryDate: body.expiry ? new Date(body.expiry) : null
-      }
+        expiryDate: body.expiry ? new Date(body.expiry) : null,
+        
+      },
     })
 
     // Log activity
@@ -79,13 +79,14 @@ export async function POST(request: Request) {
       data: {
         type: 'ADD_STOCK',
         message: `Added ${body.quantity} units of ${body.name}`,
-        userId: session.user.id
-      }
+        userId: session.user.id,
+      },
     })
 
     revalidatePath('/inventory')
     return NextResponse.json(newItem, { status: 201 })
   } catch (error) {
+    console.error('Error creating item:', error)
     return NextResponse.json(
       { error: 'Failed to create inventory item' },
       { status: 500 }
@@ -93,19 +94,17 @@ export async function POST(request: Request) {
   }
 }
 
-// Helper function to determine item status
+// Helper: compute item status
 function getItemStatus(quantity: number, expiryDate: Date | null): string {
   if (quantity === 0) return 'Out of Stock'
   if (quantity < 10) return 'Low Stock'
-  
+
   if (expiryDate) {
     const today = new Date()
     const expiry = new Date(expiryDate)
-    const diffTime = expiry.getTime() - today.getTime()
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    
+    const diffDays = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
     if (diffDays <= 30) return 'Expires Soon'
   }
-  
+
   return 'In Stock'
 }
