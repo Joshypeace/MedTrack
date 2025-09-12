@@ -1,103 +1,94 @@
-// app/api/sales/route.ts
-import { prisma } from '@/lib/prisma'
-import { authOptions } from '@/lib/auth'
-import { NextResponse } from 'next/server'
-import { ActivityType } from '@prisma/client'
+import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
+import { prisma } from '@/lib/prisma'
 
-export async function GET() {
-  const session = await getServerSession(authOptions)
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
+export async function POST(request: NextRequest) {
   try {
-    const sales = await prisma.sale.findMany({
-      include: {
-        item: true,
-        soldBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
+    const session = await getServerSession()
+    if (!session || !session.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { items, paymentMethod, total } = await request.json()
+    
+    // Get the current user
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
     })
-    return NextResponse.json(sales)
+    
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    // Process each item in the transaction
+    for (const item of items) {
+      // Update inventory
+      await prisma.inventoryItem.update({
+        where: { id: item.id },
+        data: {
+          quantity: {
+            decrement: item.quantity
+          }
+        }
+      })
+
+      // Record the sale - adjust fields based on your actual Prisma schema
+      await prisma.sale.create({
+        data: {
+          itemId: item.id, // Changed to match Prisma schema
+          quantity: item.quantity,
+          totalPrice: item.total || item.price * item.quantity,
+          userId: user.id,
+        }
+      })
+    }
+
+    // Create activity log
+    await prisma.activityLog.create({
+      data: {
+        type: 'SALE',
+        message: `Processed sale of ${items.length} items totaling MWK ${total}`,
+        userId: user.id,
+      }
+    })
+
+    return NextResponse.json({ success: true })
   } catch (error) {
+    console.error('Error processing sale:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch sales' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }
 }
 
-export async function POST(request: Request) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
+export async function GET() {
   try {
-    const { itemId, quantity } = await request.json()
-
-    // Get the item
-    const item = await prisma.inventoryItem.findUnique({
-      where: { id: itemId },
-    })
-
-    if (!item) {
-      return NextResponse.json(
-        { error: 'Item not found' },
-        { status: 404 }
-      )
+    const session = await getServerSession()
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (item.quantity < quantity) {
-      return NextResponse.json(
-        { error: 'Insufficient stock' },
-        { status: 400 }
-      )
-    }
-
-    // Calculate total price
-    const totalPrice = item.price * quantity
-
-    // Create the sale
-    const sale = await prisma.sale.create({
-      data: {
-        itemId,
-        quantity,
-        totalPrice,
-        userId: session.user.id,
+    const sales = await prisma.sale.findMany({
+      include: {
+        item: true, 
+        soldBy: {
+          select: {
+            name: true,
+            email: true
+          }
+        }
       },
+      orderBy: {
+        createdAt: 'desc'
+      }
     })
 
-    // Update inventory quantity
-    await prisma.inventoryItem.update({
-      where: { id: itemId },
-      data: {
-        quantity: {
-          decrement: quantity,
-        },
-      },
-    })
-
-    // Log the activity
-    await prisma.activityLog.create({
-      data: {
-        type: 'SALE',
-        message: `Sold ${quantity} units of ${item.name} for $${totalPrice}`,
-        userId: session.user.id,
-      },
-    })
-
-    return NextResponse.json(sale, { status: 201 })
+    return NextResponse.json(sales)
   } catch (error) {
+    console.error('Error fetching sales:', error)
     return NextResponse.json(
-      { error: 'Failed to record sale' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

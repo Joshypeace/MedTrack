@@ -1,27 +1,28 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Search, Plus, Minus, ShoppingCart, CreditCard, Smartphone, Receipt } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-// import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import Sidebar from '@/components/layout/sidebar'
 import Header from '@/components/layout/header'
 
-const availableMedicines = [
-  { id: 1, name: 'Paracetamol 500mg', price: 150, stock: 245 },
-  { id: 2, name: 'Amoxicillin 250mg', price: 450, stock: 8 },
-  { id: 3, name: 'Ibuprofen 400mg', price: 200, stock: 156 },
-  { id: 4, name: 'Vitamin C 1000mg', price: 300, stock: 134 },
-  { id: 5, name: 'Aspirin 75mg', price: 120, stock: 5 },
-]
+interface Medicine {
+  id: string
+  name: string
+  price: number
+  quantity: number
+  expiryDate?: Date | null
+  batch?: string | null
+  category: string
+}
 
 interface CartItem {
-  id: number
+  id: string
   name: string
   price: number
   quantity: number
@@ -33,50 +34,187 @@ export default function SalesPage() {
   const [cart, setCart] = useState<CartItem[]>([])
   const [paymentMethod, setPaymentMethod] = useState('cash')
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false)
+  const [availableMedicines, setAvailableMedicines] = useState<Medicine[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  const addToCart = (medicine: typeof availableMedicines[0]) => {
+  // Fetch medicines from the backend
+  useEffect(() => {
+    const fetchMedicines = async () => {
+      try {
+        const response = await fetch('/api/inventory')
+        if (response.ok) {
+          const data = await response.json()
+          // Ensure all medicines have required fields with fallbacks
+          const medicinesWithDefaults = data.map((medicine: any) => ({
+            id: medicine.id || '',
+            name: medicine.name || 'Unknown Medicine',
+            price: medicine.price ?? 0, // Fallback to 0 if price is undefined
+            quantity: medicine.quantity || 0,
+            expiryDate: medicine.expiryDate || null,
+            batch: medicine.batch || null,
+            category: medicine.category || 'Uncategorized'
+          }))
+          setAvailableMedicines(medicinesWithDefaults)
+        } else {
+          console.error('Failed to fetch medicines')
+          setAvailableMedicines([])
+        }
+      } catch (error) {
+        console.error('Error fetching medicines:', error)
+        setAvailableMedicines([])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchMedicines()
+  }, [])
+
+  const addToCart = (medicine: Medicine) => {
+    // Check if there's enough stock
+    if ((medicine.quantity || 0) <= 0) {
+      alert('This medicine is out of stock')
+      return
+    }
+
     const existingItem = cart.find(item => item.id === medicine.id)
     
     if (existingItem) {
+      // Check if we're not exceeding available stock
+      if (existingItem.quantity + 1 > (medicine.quantity || 0)) {
+        alert('Not enough stock available')
+        return
+      }
+      
       setCart(cart.map(item =>
         item.id === medicine.id
-          ? { ...item, quantity: item.quantity + 1, total: (item.quantity + 1) * item.price }
+          ? { ...item, quantity: item.quantity + 1, total: (item.quantity + 1) * (item.price || 0) }
           : item
       ))
     } else {
       setCart([...cart, {
         id: medicine.id,
         name: medicine.name,
-        price: medicine.price,
+        price: medicine.price || 0,
         quantity: 1,
-        total: medicine.price
+        total: medicine.price || 0
       }])
     }
   }
 
-  const updateQuantity = (id: number, newQuantity: number) => {
+  const updateQuantity = (id: string, newQuantity: number) => {
     if (newQuantity === 0) {
       setCart(cart.filter(item => item.id !== id))
     } else {
+      // Check if we're not exceeding available stock
+      const medicine = availableMedicines.find(m => m.id === id)
+      const cartItem = cart.find(item => item.id === id)
+      
+      if (medicine && newQuantity > (medicine.quantity || 0)) {
+        alert('Not enough stock available')
+        return
+      }
+      
       setCart(cart.map(item =>
         item.id === id
-          ? { ...item, quantity: newQuantity, total: newQuantity * item.price }
+          ? { ...item, quantity: newQuantity, total: newQuantity * (item.price || 0) }
           : item
       ))
     }
   }
 
   const getTotalAmount = () => {
-    return cart.reduce((sum, item) => sum + item.total, 0)
+    return cart.reduce((sum, item) => sum + (item.total || 0), 0)
+  }
+
+  // Safe function to get item total (prevents undefined errors)
+  const getItemTotal = (item: CartItem) => {
+    return item.total || (item.price || 0) * item.quantity
+  }
+
+  // Safe function to get medicine price with fallback
+  const getMedicinePrice = (medicine: Medicine) => {
+    return medicine.price || 0
+  }
+
+  // Safe function to get medicine quantity with fallback
+  const getMedicineQuantity = (medicine: Medicine) => {
+    return medicine.quantity || 0
   }
 
   const filteredMedicines = availableMedicines.filter(medicine =>
     medicine.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const processTransaction = () => {
-    setIsReceiptModalOpen(true)
-    // Here you would typically process the payment and update inventory
+  const processTransaction = async () => {
+    if (cart.length === 0) {
+      alert('Cart is empty. Please add items to process transaction.')
+      return
+    }
+
+    try {
+      // Process the sale
+      const response = await fetch('/api/sales', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          items: cart.map(item => ({
+            id: item.id,
+            name: item.name,
+            price: item.price || 0,
+            quantity: item.quantity,
+            total: item.total || (item.price || 0) * item.quantity
+          })),
+          paymentMethod,
+          total: getTotalAmount(),
+        }),
+      })
+
+      if (response.ok) {
+        // Update the local inventory state
+        const updatedMedicines = availableMedicines.map(medicine => {
+          const cartItem = cart.find(item => item.id === medicine.id)
+          if (cartItem) {
+            return {
+              ...medicine,
+              quantity: (medicine.quantity || 0) - cartItem.quantity
+            }
+          }
+          return medicine
+        })
+        
+        setAvailableMedicines(updatedMedicines)
+        setIsReceiptModalOpen(true)
+      } else {
+        const errorData = await response.json()
+        alert(`Failed to process transaction: ${errorData.error || 'Unknown error'}`)
+      }
+    } catch (error) {
+      console.error('Error processing transaction:', error)
+      alert('Error processing transaction. Please try again.')
+    }
+  }
+
+  const clearCart = () => {
+    setCart([])
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen bg-gray-50">
+        <Sidebar />
+        <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
+          <Header />
+          <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+            </div>
+          </main>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -121,11 +259,18 @@ export default function SalesPage() {
                       >
                         <div className="flex justify-between items-start mb-2">
                           <h3 className="font-medium text-gray-900">{medicine.name}</h3>
-                          <Badge variant={medicine.stock < 10 ? "destructive" : "secondary"}>
-                            {medicine.stock} left
+                          <Badge variant={getMedicineQuantity(medicine) < 10 ? "destructive" : "secondary"}>
+                            {getMedicineQuantity(medicine)} left
                           </Badge>
                         </div>
-                        <p className="text-lg font-bold text-green-600">MWK {medicine.price}</p>
+                        <p className="text-lg font-bold text-green-600">
+                          MWK {getMedicinePrice(medicine).toLocaleString()}
+                        </p>
+                        {medicine.expiryDate && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            Expires: {new Date(medicine.expiryDate).toLocaleDateString()}
+                          </p>
+                        )}
                         <Button
                           size="sm"
                           className="w-full mt-2 bg-green-600 hover:bg-green-700"
@@ -133,9 +278,10 @@ export default function SalesPage() {
                             e.stopPropagation()
                             addToCart(medicine)
                           }}
+                          disabled={getMedicineQuantity(medicine) === 0}
                         >
                           <Plus className="mr-2 h-4 w-4" />
-                          Add to Cart
+                          {getMedicineQuantity(medicine) === 0 ? 'Out of Stock' : 'Add to Cart'}
                         </Button>
                       </div>
                     ))}
@@ -151,6 +297,16 @@ export default function SalesPage() {
                   <CardTitle className="flex items-center">
                     <ShoppingCart className="mr-2 h-5 w-5" />
                     Shopping Cart
+                    {cart.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="ml-auto text-red-600 hover:text-red-700"
+                        onClick={clearCart}
+                      >
+                        Clear All
+                      </Button>
+                    )}
                   </CardTitle>
                   <CardDescription>{cart.length} items in cart</CardDescription>
                 </CardHeader>
@@ -168,7 +324,7 @@ export default function SalesPage() {
                           <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                             <div className="flex-1">
                               <p className="font-medium text-sm">{item.name}</p>
-                              <p className="text-sm text-gray-500">MWK {item.price} each</p>
+                              <p className="text-sm text-gray-500">MWK {(item.price || 0).toLocaleString()} each</p>
                             </div>
                             <div className="flex items-center space-x-2">
                               <Button
@@ -179,7 +335,7 @@ export default function SalesPage() {
                               >
                                 <Minus className="h-3 w-3" />
                               </Button>
-                              <span className="w-8 text-center">{item.quantity}</span>
+                              <span className="w-8 text-center font-medium">{item.quantity}</span>
                               <Button
                                 variant="outline"
                                 size="icon"
@@ -203,7 +359,7 @@ export default function SalesPage() {
                           <label className="text-sm font-medium">Payment Method</label>
                           <Select value={paymentMethod} onValueChange={setPaymentMethod}>
                             <SelectTrigger>
-                              <SelectValue />
+                              <SelectValue placeholder="Select payment method" />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="cash">
@@ -231,6 +387,7 @@ export default function SalesPage() {
                         <Button
                           className="w-full bg-green-600 hover:bg-green-700"
                           onClick={processTransaction}
+                          disabled={cart.length === 0}
                         >
                           <Receipt className="mr-2 h-4 w-4" />
                           Complete Sale
@@ -255,17 +412,17 @@ export default function SalesPage() {
               <div className="py-4">
                 <div className="bg-white p-6 border rounded-lg">
                   <div className="text-center mb-4">
-                    <h3 className="font-bold">MedTrack Pharmacy</h3>
+                    <h3 className="font-bold text-lg">MedTrack Pharmacy</h3>
                     <p className="text-sm text-gray-600">Lilongwe, Malawi</p>
-                    <p className="text-sm text-gray-600">Receipt #: RCP-{Date.now()}</p>
+                    <p className="text-sm text-gray-600">Receipt #: RCP-{Date.now().toString().slice(-6)}</p>
                     <p className="text-sm text-gray-600">{new Date().toLocaleString()}</p>
                   </div>
                   
                   <div className="border-t border-b py-4 mb-4">
                     {cart.map((item) => (
-                      <div key={item.id} className="flex justify-between text-sm mb-1">
+                      <div key={item.id} className="flex justify-between text-sm mb-2">
                         <span>{item.name} x{item.quantity}</span>
-                        <span>MWK {item.total.toLocaleString()}</span>
+                        <span>MWK {getItemTotal(item).toLocaleString()}</span>
                       </div>
                     ))}
                   </div>
@@ -275,17 +432,25 @@ export default function SalesPage() {
                     <span>MWK {getTotalAmount().toLocaleString()}</span>
                   </div>
                   
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between text-sm mb-4">
                     <span>Payment Method:</span>
                     <span className="capitalize">{paymentMethod}</span>
+                  </div>
+
+                  <div className="text-center text-xs text-gray-500">
+                    <p>Thank you for your purchase!</p>
+                    <p>Please come again</p>
                   </div>
                 </div>
               </div>
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsReceiptModalOpen(false)}>
+                <Button variant="outline" onClick={() => {
+                  setIsReceiptModalOpen(false)
+                  setCart([])
+                }}>
                   Close
                 </Button>
-                <Button className="bg-green-600 hover:bg-green-700">
+                <Button className="bg-green-600 hover:bg-green-700" onClick={() => window.print()}>
                   Print Receipt
                 </Button>
               </div>

@@ -244,7 +244,11 @@ export default function DashboardPage() {
                       cy="50%"
                       outerRadius={80}
                       dataKey="value"
-                      label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                      label={({ name, value }) => {
+                        const total = dashboardData.stockDistribution.reduce((sum, entry) => sum + entry.value, 0)
+                        const percent = total > 0 ? ((typeof value === 'number' ? value : 0) / total) * 100 : 0
+                        return `${name} ${percent.toFixed(0)}%`
+                      }}
                     >
                       {dashboardData.stockDistribution.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />

@@ -12,15 +12,27 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
+import { useSession } from "next-auth/react"
 
 export default function Header() {
+
+  const { data: session } = useSession();
+  
+  if (!session){
+    return <p>Loading or not authenticated</p>;
+  }
+
+  const userName = session.user.name;
+
+
+
   return (
     <header className="bg-gradient-to-r from-white to-slate-50/80 backdrop-blur-sm shadow-lg shadow-slate-200/30 border-b border-slate-200/50 px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex-1">
           <h2 className="text-2xl font-semibold text-slate-900">Dashboard</h2>
           <div className="flex items-center gap-2">
-            <p className="text-sm text-slate-500">Welcome back, Dr. Chisomo</p>
+            <p className="text-sm text-slate-500">{userName}!</p>
             <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-xs">
               <Crown className="h-3 w-3 mr-1" />7 days left in trial
             </Badge>
@@ -60,7 +72,7 @@ export default function Header() {
                 <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center shadow-lg">
                   <User className="h-4 w-4 text-white" />
                 </div>
-                <span className="hidden md:block font-medium">Dr. Chisomo</span>
+                <span className="hidden md:block font-medium">{userName}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
