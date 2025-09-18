@@ -49,6 +49,10 @@ model Pharmacy {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   users         User[]
+  BackupSettings BackupSettings[]
+  SecuritySettings SecuritySettings[]
+  AlertSettings AlertSettings[]
+  PharmacySettings PharmacySettings[]
 }
 
 model InventoryItem {
@@ -116,6 +120,60 @@ model Expense {
   userId      String
   user        User     @relation(fields: [userId], references: [id])
 }
+
+model PharmacySettings {
+  id            String   @id @default(cuid())
+  name          String
+  licenseNumber String
+  phone         String
+  email         String
+  address       String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  pharmacyId    String
+  pharmacy      Pharmacy @relation(fields: [pharmacyId], references: [id])
+}
+
+model AlertSettings {
+  id                 String   @id @default(cuid())
+  lowStockThreshold  Int      @default(10)
+  expiryAlertDays    Int      @default(30)
+  emailNotifications Boolean  @default(true)
+  smsNotifications   Boolean  @default(false)
+  dailyReports       Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  pharmacyId         String
+  pharmacy           Pharmacy @relation(fields: [pharmacyId], references: [id])
+}
+
+model SecuritySettings {
+  id                  String   @id @default(cuid())
+  sessionTimeout      Int      @default(30)
+  passwordPolicy      String   @default("medium")
+  twoFactorAuth       Boolean  @default(false)
+  auditLogging        Boolean  @default(true)
+  ipRestrictions      Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  pharmacyId          String
+  pharmacy            Pharmacy @relation(fields: [pharmacyId], references: [id])
+}
+
+model BackupSettings {
+  id                String   @id @default(cuid())
+  backupFrequency   String   @default("daily")
+  automaticBackups  Boolean  @default(true)
+  lastBackup        DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  pharmacyId        String
+  pharmacy          Pharmacy @relation(fields: [pharmacyId], references: [id])
+}
+
+
+
+
 
 enum ExpenseCategory {
   SALARIES
