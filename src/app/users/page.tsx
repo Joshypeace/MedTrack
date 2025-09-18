@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Search, Plus, Edit, Trash2, User, Shield, UserCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,88 +13,217 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch'
 import Sidebar from '@/components/layout/sidebar'
 import Header from '@/components/layout/header'
+import { toast } from 'sonner'
 
-const userData = [
-  {
-    id: 1,
-    name: 'Dr. Chisomo Mwale',
-    email: 'chisomo.mwale@medtrack.mw',
-    role: 'Pharmacist',
-    status: 'Active',
-    lastLogin: '2024-01-15 09:30',
-    permissions: ['inventory', 'sales', 'prescriptions', 'reports', 'users']
-  },
-  {
-    id: 2,
-    name: 'Jane Phiri',
-    email: 'jane.phiri@medtrack.mw',
-    role: 'Technician',
-    status: 'Active',
-    lastLogin: '2024-01-15 08:45',
-    permissions: ['inventory', 'sales', 'prescriptions']
-  },
-  {
-    id: 3,
-    name: 'Peter Banda',
-    email: 'peter.banda@medtrack.mw',
-    role: 'Cashier',
-    status: 'Active',
-    lastLogin: '2024-01-14 16:20',
-    permissions: ['sales']
-  },
-  {
-    id: 4,
-    name: 'Mary Tembo',
-    email: 'mary.tembo@medtrack.mw',
-    role: 'Assistant',
-    status: 'Inactive',
-    lastLogin: '2024-01-10 14:15',
-    permissions: ['inventory', 'sales']
-  },
-  {
-    id: 5,
-    name: 'James Lungu',
-    email: 'james.lungu@medtrack.mw',
-    role: 'Technician',
-    status: 'Active',
-    lastLogin: '2024-01-15 07:30',
-    permissions: ['inventory', 'sales', 'prescriptions']
-  }
-]
+interface User {
+  id: string
+  name: string
+  email: string
+  role: string
+  status: string
+  lastLogin: string | null
+  permissions: string[]
+}
+
+interface NewUser {
+  name: string
+  email: string
+  password: string
+  role: string
+  permissions: Record<string, { view: boolean; edit: boolean; delete: boolean }>
+}
 
 export default function UsersPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedRole, setSelectedRole] = useState('all')
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
-  const [selectedUser, setSelectedUser] = useState<typeof userData[0] | null>(null)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [users, setUsers] = useState<User[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [newUser, setNewUser] = useState<NewUser>({
+    name: '',
+    email: '',
+    password: '',
+    role: 'ASSISTANT',
+    permissions: {
+      inventory: { view: false, edit: false, delete: false },
+      sales: { view: false, edit: false, delete: false },
+      prescriptions: { view: false, edit: false, delete: false },
+      reports: { view: false, edit: false, delete: false },
+      users: { view: false, edit: false, delete: false },
+      settings: { view: false, edit: false, delete: false },
+    }
+  })
+
+  const fetchUsers = useCallback(async () => {
+    try {
+      setIsLoading(true)
+      const queryParams = new URLSearchParams()
+      if (searchTerm) queryParams.append('search', searchTerm)
+      if (selectedRole !== 'all') queryParams.append('role', selectedRole)
+      
+      const response = await fetch(`/api/users?${queryParams.toString()}`)
+      if (!response.ok) throw new Error('Failed to fetch users')
+      
+      const data = await response.json()
+      setUsers(data)
+    } catch (error) {
+      console.error('Error fetching users:', error)
+      toast.error('Failed to load users')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [searchTerm, selectedRole])
+
+  useEffect(() => {
+    fetchUsers()
+  }, [fetchUsers])
 
   const getRoleBadge = (role: string) => {
     switch (role) {
-      case 'Pharmacist':
+      case 'PHARMACIST':
         return <Badge className="bg-green-100 text-green-800">Pharmacist</Badge>
-      case 'Technician':
+      case 'TECHNICIAN':
         return <Badge className="bg-blue-100 text-blue-800">Technician</Badge>
-      case 'Cashier':
+      case 'CASHIER':
         return <Badge className="bg-purple-100 text-purple-800">Cashier</Badge>
-      case 'Assistant':
+      case 'ASSISTANT':
         return <Badge className="bg-orange-100 text-orange-800">Assistant</Badge>
+      case 'ADMIN':
+        return <Badge className="bg-red-100 text-red-800">Admin</Badge>
       default:
         return <Badge variant="secondary">{role}</Badge>
     }
   }
 
   const getStatusBadge = (status: string) => {
-    return status === 'Active' 
+    return status === 'ACTIVE' 
       ? <Badge className="bg-green-100 text-green-800">Active</Badge>
       : <Badge className="bg-red-100 text-red-800">Inactive</Badge>
   }
 
-  const filteredData = userData.filter(user => {
+  const handleCreateUser = async () => {
+    try {
+      const response = await fetch('/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newUser),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to create user')
+      }
+
+      toast.success('User created successfully')
+      setIsAddModalOpen(false)
+      setNewUser({
+        name: '',
+        email: '',
+        password: '',
+        role: 'ASSISTANT',
+        permissions: {
+          inventory: { view: false, edit: false, delete: false },
+          sales: { view: false, edit: false, delete: false },
+          prescriptions: { view: false, edit: false, delete: false },
+          reports: { view: false, edit: false, delete: false },
+          users: { view: false, edit: false, delete: false },
+          settings: { view: false, edit: false, delete: false },
+        }
+      })
+      fetchUsers()
+    } catch (error: any) {
+      console.error('Error creating user:', error)
+      toast.error(error.message || 'Failed to create user')
+    }
+  }
+
+  const handleUpdateUser = async () => {
+    if (!selectedUser) return
+
+    try {
+      const response = await fetch('/api/users', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: selectedUser.id,
+          permissions: newUser.permissions,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update user')
+      }
+
+      toast.success('User permissions updated successfully')
+      setIsEditModalOpen(false)
+      setSelectedUser(null)
+      fetchUsers()
+    } catch (error) {
+      console.error('Error updating user:', error)
+      toast.error('Failed to update user permissions')
+    }
+  }
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm('Are you sure you want to delete this user?')) return
+
+    try {
+      const response = await fetch(`/api/users?id=${userId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete user')
+      }
+
+      toast.success('User deleted successfully')
+      fetchUsers()
+    } catch (error) {
+      console.error('Error deleting user:', error)
+      toast.error('Failed to delete user')
+    }
+  }
+
+  const filteredData = users.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.email.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesRole = selectedRole === 'all' || user.role === selectedRole
     return matchesSearch && matchesRole
   })
+
+  // Calculate summary stats
+  const summaryStats = {
+    total: users.length,
+    active: users.filter(u => u.status === 'ACTIVE').length,
+    pharmacists: users.filter(u => u.role === 'PHARMACIST').length,
+    // For online users, you might want to implement a real-time check
+    online: users.filter(u => u.lastLogin && new Date(u.lastLogin).getTime() > Date.now() - 300000).length,
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen bg-gray-50">
+        <Sidebar />
+        <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
+          <Header />
+          <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading users...</p>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -116,7 +245,7 @@ export default function UsersPage() {
                 <User className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">5</div>
+                <div className="text-2xl font-bold">{summaryStats.total}</div>
                 <p className="text-xs text-muted-foreground">Registered users</p>
               </CardContent>
             </Card>
@@ -127,7 +256,7 @@ export default function UsersPage() {
                 <UserCheck className="h-4 w-4 text-green-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-600">4</div>
+                <div className="text-2xl font-bold text-green-600">{summaryStats.active}</div>
                 <p className="text-xs text-muted-foreground">Currently active</p>
               </CardContent>
             </Card>
@@ -138,7 +267,7 @@ export default function UsersPage() {
                 <Shield className="h-4 w-4 text-blue-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-blue-600">1</div>
+                <div className="text-2xl font-bold text-blue-600">{summaryStats.pharmacists}</div>
                 <p className="text-xs text-muted-foreground">Licensed pharmacists</p>
               </CardContent>
             </Card>
@@ -149,7 +278,7 @@ export default function UsersPage() {
                 <User className="h-4 w-4 text-purple-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-purple-600">3</div>
+                <div className="text-2xl font-bold text-purple-600">{summaryStats.online}</div>
                 <p className="text-xs text-muted-foreground">Currently logged in</p>
               </CardContent>
             </Card>
@@ -181,31 +310,51 @@ export default function UsersPage() {
                       <div className="grid grid-cols-2 gap-4">
                         <div className="grid gap-2">
                           <Label htmlFor="full-name">Full Name</Label>
-                          <Input id="full-name" placeholder="John Banda" />
+                          <Input 
+                            id="full-name" 
+                            placeholder="John Banda" 
+                            value={newUser.name}
+                            onChange={(e) => setNewUser({...newUser, name: e.target.value})}
+                          />
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor="email">Email</Label>
-                          <Input id="email" type="email" placeholder="john@medtrack.mw" />
+                          <Input 
+                            id="email" 
+                            type="email" 
+                            placeholder="john@medtrack.mw" 
+                            value={newUser.email}
+                            onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+                          />
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="grid gap-2">
                           <Label htmlFor="role">Role</Label>
-                          <Select>
+                          <Select
+                            value={newUser.role}
+                            onValueChange={(value) => setNewUser({...newUser, role: value})}
+                          >
                             <SelectTrigger>
                               <SelectValue placeholder="Select role" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="pharmacist">Pharmacist</SelectItem>
-                              <SelectItem value="technician">Technician</SelectItem>
-                              <SelectItem value="cashier">Cashier</SelectItem>
-                              <SelectItem value="assistant">Assistant</SelectItem>
+                              <SelectItem value="PHARMACIST">Pharmacist</SelectItem>
+                              <SelectItem value="TECHNICIAN">Technician</SelectItem>
+                              <SelectItem value="CASHIER">Cashier</SelectItem>
+                              <SelectItem value="ASSISTANT">Assistant</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor="password">Password</Label>
-                          <Input id="password" type="password" placeholder="••••••••" />
+                          <Input 
+                            id="password" 
+                            type="password" 
+                            placeholder="••••••••" 
+                            value={newUser.password}
+                            onChange={(e) => setNewUser({...newUser, password: e.target.value})}
+                          />
                         </div>
                       </div>
                       <div className="grid gap-4">
@@ -220,7 +369,20 @@ export default function UsersPage() {
                             { id: 'settings', label: 'System Settings' }
                           ].map((permission) => (
                             <div key={permission.id} className="flex items-center space-x-2">
-                              <Switch id={permission.id} />
+                              <Switch 
+                                id={permission.id} 
+                                checked={newUser.permissions[permission.id]?.view || false}
+                                onCheckedChange={(checked) => setNewUser({
+                                  ...newUser,
+                                  permissions: {
+                                    ...newUser.permissions,
+                                    [permission.id]: {
+                                      ...newUser.permissions[permission.id],
+                                      view: checked
+                                    }
+                                  }
+                                })}
+                              />
                               <Label htmlFor={permission.id} className="text-sm">
                                 {permission.label}
                               </Label>
@@ -233,7 +395,7 @@ export default function UsersPage() {
                       <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
                         Cancel
                       </Button>
-                      <Button className="bg-green-600 hover:bg-green-700">
+                      <Button onClick={handleCreateUser} className="bg-green-600 hover:bg-green-700">
                         Create User
                       </Button>
                     </div>
@@ -258,10 +420,11 @@ export default function UsersPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Roles</SelectItem>
-                    <SelectItem value="Pharmacist">Pharmacist</SelectItem>
-                    <SelectItem value="Technician">Technician</SelectItem>
-                    <SelectItem value="Cashier">Cashier</SelectItem>
-                    <SelectItem value="Assistant">Assistant</SelectItem>
+                    <SelectItem value="PHARMACIST">Pharmacist</SelectItem>
+                    <SelectItem value="TECHNICIAN">Technician</SelectItem>
+                    <SelectItem value="CASHIER">Cashier</SelectItem>
+                    <SelectItem value="ASSISTANT">Assistant</SelectItem>
+                    <SelectItem value="ADMIN">Admin</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -279,84 +442,106 @@ export default function UsersPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredData.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.name}</TableCell>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell>{getRoleBadge(user.role)}</TableCell>
-                        <TableCell>{getStatusBadge(user.status)}</TableCell>
-                        <TableCell>{user.lastLogin}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => setSelectedUser(user)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent className="sm:max-w-[500px]">
-                                <DialogHeader>
-                                  <DialogTitle>Edit User Permissions</DialogTitle>
-                                  <DialogDescription>
-                                    Modify user access and permissions
-                                  </DialogDescription>
-                                </DialogHeader>
-                                {selectedUser && (
-                                  <div className="grid gap-4 py-4">
-                                    <div className="grid gap-2">
-                                      <Label>User Details</Label>
-                                      <div className="p-3 bg-gray-50 rounded-lg">
-                                        <p className="font-medium">{selectedUser.name}</p>
-                                        <p className="text-sm text-gray-600">{selectedUser.email}</p>
-                                        <p className="text-sm text-gray-600">{selectedUser.role}</p>
+                    {filteredData.length > 0 ? (
+                      filteredData.map((user) => (
+                        <TableRow key={user.id}>
+                          <TableCell className="font-medium">{user.name}</TableCell>
+                          <TableCell>{user.email}</TableCell>
+                          <TableCell>{getRoleBadge(user.role)}</TableCell>
+                          <TableCell>{getStatusBadge(user.status)}</TableCell>
+                          <TableCell>{user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never'}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+                                <DialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setSelectedUser(user)}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-[500px]">
+                                  <DialogHeader>
+                                    <DialogTitle>Edit User Permissions</DialogTitle>
+                                    <DialogDescription>
+                                      Modify user access and permissions
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  {selectedUser && (
+                                    <div className="grid gap-4 py-4">
+                                      <div className="grid gap-2">
+                                        <Label>User Details</Label>
+                                        <div className="p-3 bg-gray-50 rounded-lg">
+                                          <p className="font-medium">{selectedUser.name}</p>
+                                          <p className="text-sm text-gray-600">{selectedUser.email}</p>
+                                          <p className="text-sm text-gray-600">{selectedUser.role}</p>
+                                        </div>
+                                      </div>
+                                      <div className="grid gap-4">
+                                        <Label>Permissions</Label>
+                                        <div className="space-y-3">
+                                          {[
+                                            { id: 'inventory', label: 'Inventory Management' },
+                                            { id: 'sales', label: 'Sales & Dispensing' },
+                                            { id: 'prescriptions', label: 'Prescription Records' },
+                                            { id: 'reports', label: 'Reports & Analytics' },
+                                            { id: 'users', label: 'User Management' },
+                                            { id: 'settings', label: 'System Settings' }
+                                          ].map((permission) => (
+                                            <div key={permission.id} className="flex items-center space-x-2">
+                                              <Switch 
+                                                id={permission.id} 
+                                                checked={selectedUser.permissions.includes(permission.id.toUpperCase())}
+                                                onCheckedChange={(checked) => {
+                                                  const updatedPermissions = checked
+                                                    ? [...selectedUser.permissions, permission.id.toUpperCase()]
+                                                    : selectedUser.permissions.filter(p => p !== permission.id.toUpperCase())
+                                                  setSelectedUser({
+                                                    ...selectedUser,
+                                                    permissions: updatedPermissions
+                                                  })
+                                                }}
+                                              />
+                                              <Label htmlFor={permission.id} className="text-sm">
+                                                {permission.label}
+                                              </Label>
+                                            </div>
+                                          ))}
+                                        </div>
                                       </div>
                                     </div>
-                                    <div className="grid gap-4">
-                                      <Label>Current Permissions</Label>
-                                      <div className="space-y-3">
-                                        {[
-                                          { id: 'inventory', label: 'Inventory Management' },
-                                          { id: 'sales', label: 'Sales & Dispensing' },
-                                          { id: 'prescriptions', label: 'Prescription Records' },
-                                          { id: 'reports', label: 'Reports & Analytics' },
-                                          { id: 'users', label: 'User Management' },
-                                          { id: 'settings', label: 'System Settings' }
-                                        ].map((permission) => (
-                                          <div key={permission.id} className="flex items-center space-x-2">
-                                            <Switch 
-                                              id={permission.id} 
-                                              checked={selectedUser.permissions.includes(permission.id)}
-                                            />
-                                            <Label htmlFor={permission.id} className="text-sm">
-                                              {permission.label}
-                                            </Label>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
+                                  )}
+                                  <div className="flex justify-end gap-2">
+                                    <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
+                                      Cancel
+                                    </Button>
+                                    <Button onClick={handleUpdateUser} className="bg-green-600 hover:bg-green-700">
+                                      Save Changes
+                                    </Button>
                                   </div>
-                                )}
-                                <div className="flex justify-end gap-2">
-                                  <Button variant="outline">
-                                    Cancel
-                                  </Button>
-                                  <Button className="bg-green-600 hover:bg-green-700">
-                                    Save Changes
-                                  </Button>
-                                </div>
-                              </DialogContent>
-                            </Dialog>
-                            <Button variant="ghost" size="icon" className="text-red-600 hover:text-red-700">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                                </DialogContent>
+                              </Dialog>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="text-red-600 hover:text-red-700"
+                                onClick={() => handleDeleteUser(user.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                          No users found
                         </TableCell>
                       </TableRow>
-                    ))}
+                    )}
                   </TableBody>
                 </Table>
               </div>

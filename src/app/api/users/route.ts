@@ -1,33 +1,67 @@
-// app/api/users/route.ts
-import { prisma } from '@/lib/prisma'
-import { authOptions } from '@/lib/auth'
 import { NextResponse } from 'next/server'
-import { Role } from '@prisma/client'
-import { hashPassword } from '@/lib/hash'
-import { ActivityType } from '@prisma/client'
 import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
+import bcrypt from 'bcryptjs'
 
-// GET all users (ADMIN only)
-export async function GET() {
+// GET all users with filtering
+export async function GET(request: Request) {
   const session = await getServerSession(authOptions)
-  if (!session?.user || session.user.role !== 'ADMIN') {
+  if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const { searchParams } = new URL(request.url)
+  const searchTerm = searchParams.get('search') || ''
+  const role = searchParams.get('role') || 'all'
+
   try {
+    const whereClause: any = {}
+
+    if (searchTerm) {
+      whereClause.OR = [
+        { name: { contains: searchTerm, mode: 'insensitive' } },
+        { email: { contains: searchTerm, mode: 'insensitive' } },
+      ]
+    }
+
+    if (role !== 'all') {
+      whereClause.role = role
+    }
+
     const users = await prisma.user.findMany({
+      where: whereClause,
       select: {
         id: true,
-        email: true,
         name: true,
+        email: true,
         role: true,
+        status: true,
+        lastLogin: true,
         createdAt: true,
-        updatedAt: true,
+        permissions: {
+          select: {
+            module: true,
+            canView: true,
+            canEdit: true,
+            canDelete: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     })
-    return NextResponse.json(users)
+
+    // Transform permissions to match frontend format
+    const transformedUsers = users.map(user => ({
+      ...user,
+      permissions: user.permissions
+        .filter(p => p.canView || p.canEdit || p.canDelete)
+        .map(p => p.module.toLowerCase())
+    }))
+
+    return NextResponse.json(transformedUsers)
   } catch (error) {
+    console.error('Error fetching users:', error)
     return NextResponse.json(
       { error: 'Failed to fetch users' },
       { status: 500 }
@@ -35,24 +69,16 @@ export async function GET() {
   }
 }
 
-// POST create new user (ADMIN only)
+// POST create new user
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions)
-  if (!session?.user || session.user.role !== 'ADMIN') {
+  if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   try {
-    const data = await request.json()
-    const { email, password, name, role } = data
-
-    // Validate role
-    if (!Object.values(Role).includes(role)) {
-      return NextResponse.json(
-        { error: 'Invalid role specified' },
-        { status: 400 }
-      )
-    }
+    const body = await request.json()
+    const { name, email, password, role, permissions } = body
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -67,36 +93,44 @@ export async function POST(request: Request) {
     }
 
     // Hash password
-    const hashedPassword = await hashPassword(password)
+    const hashedPassword = await bcrypt.hash(password, 12)
 
-    // Create new user
+    // Create user with permissions
     const newUser = await prisma.user.create({
       data: {
+        name,
         email,
         password: hashedPassword,
-        name,
         role,
+        permissions: {
+          create: Object.entries(permissions).map(([module, access]) => ({
+            module: module.toUpperCase() as any,
+            canView: (access as any).view || false,
+            canEdit: (access as any).edit || false,
+            canDelete: (access as any).delete || false,
+          })),
+        },
       },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        createdAt: true,
+      include: {
+        permissions: true,
       },
     })
 
-    // Log the activity
+    // Log activity
     await prisma.activityLog.create({
       data: {
-        type: 'ADD_STOCK', // Consider adding a USER_CREATED activity type
-        message: `Created new user: ${email} with role ${role}`,
+        type: 'ADD_STOCK',
+        message: `Created new user account for ${name}`,
         userId: session.user.id,
       },
     })
 
-    return NextResponse.json(newUser, { status: 201 })
+    // Remove password from response
+    const { password: _, ...userWithoutPassword } = newUser
+
+    return NextResponse.json(userWithoutPassword, { status: 201 })
   } catch (error) {
+    console.error('Error creating user:', error)
     return NextResponse.json(
       { error: 'Failed to create user' },
       { status: 500 }
@@ -104,63 +138,56 @@ export async function POST(request: Request) {
   }
 }
 
-// PUT update user (ADMIN only)
-export async function PUT(request: Request) {
+// PATCH update user permissions
+export async function PATCH(request: Request) {
   const session = await getServerSession(authOptions)
-  if (!session?.user || session.user.role !== 'ADMIN') {
+  if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   try {
-    const data = await request.json()
-    const { id, email, name, role, password } = data
+    const body = await request.json()
+    const { userId, permissions, status } = body
 
-    // Validate role if provided
-    if (role && !Object.values(Role).includes(role)) {
-      return NextResponse.json(
-        { error: 'Invalid role specified' },
-        { status: 400 }
-      )
+    // Update user status if provided
+    if (status) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { status },
+      })
     }
 
-    const updateData: any = {
-      name,
-      role,
+    // Update permissions if provided
+    if (permissions) {
+      // Delete existing permissions
+      await prisma.userPermission.deleteMany({
+        where: { userId },
+      })
+
+      // Create new permissions
+      await prisma.userPermission.createMany({
+        data: Object.entries(permissions).map(([module, access]) => ({
+          module: module.toUpperCase() as any,
+          canView: (access as any).view || false,
+          canEdit: (access as any).edit || false,
+          canDelete: (access as any).delete || false,
+          userId,
+        })),
+      })
     }
 
-    // Only update email if it's provided and different
-    if (email) {
-      updateData.email = email
-    }
-
-    // Only hash and update password if it's provided
-    if (password) {
-      updateData.password = await hashPassword(password)
-    }
-
-    const updatedUser = await prisma.user.update({
-      where: { id },
-      data: updateData,
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        updatedAt: true,
-      },
-    })
-
-    // Log the activity
+    // Log activity
     await prisma.activityLog.create({
       data: {
-        type: 'UPDATE_STOCK', // Consider adding a USER_UPDATED activity type
-        message: `Updated user: ${updatedUser.email}`,
+        type: 'UPDATE_STOCK',
+        message: `Updated permissions for user ${userId}`,
         userId: session.user.id,
       },
     })
 
-    return NextResponse.json(updatedUser)
+    return NextResponse.json({ success: true })
   } catch (error) {
+    console.error('Error updating user:', error)
     return NextResponse.json(
       { error: 'Failed to update user' },
       { status: 500 }
@@ -168,43 +195,54 @@ export async function PUT(request: Request) {
   }
 }
 
-// DELETE user (ADMIN only)
+// DELETE user
 export async function DELETE(request: Request) {
   const session = await getServerSession(authOptions)
-  if (!session?.user || session.user.role !== 'ADMIN') {
+  if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   try {
-    const { id } = await request.json()
+    const { searchParams } = new URL(request.url)
+    const userId = searchParams.get('id')
 
-    // Prevent deleting self
-    if (id === session.user.id) {
+    if (!userId) {
       return NextResponse.json(
-        { error: 'You cannot delete your own account' },
+        { error: 'User ID is required' },
         { status: 400 }
       )
     }
 
-    const deletedUser = await prisma.user.delete({
-      where: { id },
-      select: {
-        id: true,
-        email: true,
-      },
+    // Prevent self-deletion
+    if (userId === session.user.id) {
+      return NextResponse.json(
+        { error: 'Cannot delete your own account' },
+        { status: 400 }
+      )
+    }
+
+    // Delete user permissions first
+    await prisma.userPermission.deleteMany({
+      where: { userId },
     })
 
-    // Log the activity
+    // Delete user
+    await prisma.user.delete({
+      where: { id: userId },
+    })
+
+    // Log activity
     await prisma.activityLog.create({
       data: {
-        type: 'DELETE_STOCK', // Consider adding a USER_DELETED activity type
-        message: `Deleted user: ${deletedUser.email}`,
+        type: 'DELETE_STOCK',
+        message: `Deleted user account ${userId}`,
         userId: session.user.id,
       },
     })
 
-    return NextResponse.json(deletedUser)
+    return NextResponse.json({ success: true })
   } catch (error) {
+    console.error('Error deleting user:', error)
     return NextResponse.json(
       { error: 'Failed to delete user' },
       { status: 500 }
