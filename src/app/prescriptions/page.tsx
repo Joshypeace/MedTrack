@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Search, Upload, Eye, FileText, User, Calendar, Camera } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,79 +13,146 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import Sidebar from '@/components/layout/sidebar'
 import Header from '@/components/layout/header'
+import { toast } from 'sonner'
 
-const prescriptionData = [
-  {
-    id: 1,
-    patientName: 'John Banda',
-    age: 45,
-    gender: 'Male',
-    doctor: 'Dr. Chisomo Mwale',
-    date: '2024-01-15',
-    status: 'Pending',
-    medications: ['Amoxicillin 500mg', 'Paracetamol 500mg'],
-    hasImage: true
-  },
-  {
-    id: 2,
-    patientName: 'Mary Phiri',
-    age: 32,
-    gender: 'Female',
-    doctor: 'Dr. James Tembo',
-    date: '2024-01-14',
-    status: 'Dispensed',
-    medications: ['Metformin 500mg', 'Vitamin D3'],
-    hasImage: false
-  },
-  {
-    id: 3,
-    patientName: 'Peter Mbewe',
-    age: 28,
-    gender: 'Male',
-    doctor: 'Dr. Grace Nyirenda',
-    date: '2024-01-14',
-    status: 'Pending',
-    medications: ['Ibuprofen 400mg'],
-    hasImage: true
-  },
-  {
-    id: 4,
-    patientName: 'Sarah Kachingwe',
-    age: 55,
-    gender: 'Female',
-    doctor: 'Dr. Michael Lungu',
-    date: '2024-01-13',
-    status: 'Completed',
-    medications: ['Insulin Glargine', 'Metformin 1000mg'],
-    hasImage: true
-  }
-]
+interface Prescription {
+  id: string
+  patientName: string
+  age: number
+  gender: string
+  doctor: string
+  date: string
+  status: 'PENDING' | 'DISPENSED' | 'COMPLETED'
+  medications: string[]
+  imageUrl?: string
+}
 
 export default function PrescriptionsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedStatus, setSelectedStatus] = useState('all')
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
-  const [selectedPrescription, setSelectedPrescription] = useState<typeof prescriptionData[0] | null>(null)
+  const [selectedPrescription, setSelectedPrescription] = useState<Prescription | null>(null)
+  const [prescriptions, setPrescriptions] = useState<Prescription[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [newPrescription, setNewPrescription] = useState({
+    patientName: '',
+    age: '',
+    gender: '',
+    doctor: '',
+    medications: '',
+    imageUrl: ''
+  })
+
+  const fetchPrescriptions = useCallback(async () => {
+    try {
+      setIsLoading(true)
+      const queryParams = new URLSearchParams()
+      if (searchTerm) queryParams.append('search', searchTerm)
+      if (selectedStatus !== 'all') queryParams.append('status', selectedStatus)
+      
+      const response = await fetch(`/api/prescriptions?${queryParams.toString()}`)
+      if (!response.ok) throw new Error('Failed to fetch prescriptions')
+      
+      const data = await response.json()
+      setPrescriptions(data)
+    } catch (error) {
+      console.error('Error fetching prescriptions:', error)
+      toast.error('Failed to load prescriptions')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [searchTerm, selectedStatus])
+
+  useEffect(() => {
+    fetchPrescriptions()
+  }, [fetchPrescriptions])
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'Pending':
+      case 'PENDING':
         return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Pending</Badge>
-      case 'Dispensed':
+      case 'DISPENSED':
         return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Dispensed</Badge>
-      case 'Completed':
+      case 'COMPLETED':
         return <Badge variant="secondary" className="bg-green-100 text-green-800">Completed</Badge>
       default:
         return <Badge variant="secondary">{status}</Badge>
     }
   }
 
-  const filteredData = prescriptionData.filter(prescription => {
+  const handleAddPrescription = async () => {
+    try {
+      const medications = newPrescription.medications.split('\n').filter(med => med.trim())
+      
+      const response = await fetch('/api/prescriptions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...newPrescription,
+          age: Number(newPrescription.age),
+          medications,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to add prescription')
+      }
+
+      toast.success('Prescription added successfully')
+      setIsAddModalOpen(false)
+      setNewPrescription({
+        patientName: '',
+        age: '',
+        gender: '',
+        doctor: '',
+        medications: '',
+        imageUrl: ''
+      })
+      fetchPrescriptions()
+    } catch (error) {
+      console.error('Error adding prescription:', error)
+      toast.error('Failed to add prescription')
+    }
+  }
+
+  const handleUpdateStatus = async (id: string, newStatus: 'DISPENSED' | 'COMPLETED') => {
+    try {
+      const response = await fetch('/api/prescriptions', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id, status: newStatus }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update prescription status')
+      }
+
+      toast.success('Prescription status updated successfully')
+      fetchPrescriptions()
+    } catch (error) {
+      console.error('Error updating prescription:', error)
+      toast.error('Failed to update prescription status')
+    }
+  }
+
+  const filteredData = prescriptions.filter(prescription => {
     const matchesSearch = prescription.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          prescription.doctor.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = selectedStatus === 'all' || prescription.status === selectedStatus
     return matchesSearch && matchesStatus
   })
+
+  // Calculate summary stats
+  const summaryStats = {
+    total: prescriptions.length,
+    pending: prescriptions.filter(p => p.status === 'PENDING').length,
+    dispensed: prescriptions.filter(p => p.status === 'DISPENSED').length,
+    completed: prescriptions.filter(p => p.status === 'COMPLETED').length,
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -107,8 +174,8 @@ export default function PrescriptionsPage() {
                 <FileText className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">156</div>
-                <p className="text-xs text-muted-foreground">This month</p>
+                <div className="text-2xl font-bold">{summaryStats.total}</div>
+                <p className="text-xs text-muted-foreground">All prescriptions</p>
               </CardContent>
             </Card>
 
@@ -118,18 +185,18 @@ export default function PrescriptionsPage() {
                 <Calendar className="h-4 w-4 text-yellow-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-yellow-600">12</div>
+                <div className="text-2xl font-bold text-yellow-600">{summaryStats.pending}</div>
                 <p className="text-xs text-muted-foreground">Awaiting dispensing</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Dispensed Today</CardTitle>
+                <CardTitle className="text-sm font-medium">Dispensed</CardTitle>
                 <User className="h-4 w-4 text-blue-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-blue-600">8</div>
+                <div className="text-2xl font-bold text-blue-600">{summaryStats.dispensed}</div>
                 <p className="text-xs text-muted-foreground">Medications dispensed</p>
               </CardContent>
             </Card>
@@ -140,7 +207,7 @@ export default function PrescriptionsPage() {
                 <FileText className="h-4 w-4 text-green-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-600">136</div>
+                <div className="text-2xl font-bold text-green-600">{summaryStats.completed}</div>
                 <p className="text-xs text-muted-foreground">Fully processed</p>
               </CardContent>
             </Card>
@@ -165,62 +232,85 @@ export default function PrescriptionsPage() {
                     <DialogHeader>
                       <DialogTitle>Add New Prescription</DialogTitle>
                       <DialogDescription>
-                        Enter patient details and upload prescription image.
+                        Enter patient details and prescription information.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="grid gap-2">
                           <Label htmlFor="patient-name">Patient Name</Label>
-                          <Input id="patient-name" placeholder="John Banda" />
+                          <Input 
+                            id="patient-name" 
+                            placeholder="John Banda" 
+                            value={newPrescription.patientName}
+                            onChange={(e) => setNewPrescription({...newPrescription, patientName: e.target.value})}
+                          />
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor="age">Age</Label>
-                          <Input id="age" type="number" placeholder="45" />
+                          <Input 
+                            id="age" 
+                            type="number" 
+                            placeholder="45" 
+                            value={newPrescription.age}
+                            onChange={(e) => setNewPrescription({...newPrescription, age: e.target.value})}
+                          />
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="grid gap-2">
                           <Label htmlFor="gender">Gender</Label>
-                          <Select>
+                          <Select
+                            value={newPrescription.gender}
+                            onValueChange={(value) => setNewPrescription({...newPrescription, gender: value})}
+                          >
                             <SelectTrigger>
                               <SelectValue placeholder="Select gender" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="male">Male</SelectItem>
-                              <SelectItem value="female">Female</SelectItem>
+                              <SelectItem value="Male">Male</SelectItem>
+                              <SelectItem value="Female">Female</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor="doctor">Doctor</Label>
-                          <Input id="doctor" placeholder="Dr. Chisomo Mwale" />
+                          <Input 
+                            id="doctor" 
+                            placeholder="Dr. Chisomo Mwale" 
+                            value={newPrescription.doctor}
+                            onChange={(e) => setNewPrescription({...newPrescription, doctor: e.target.value})}
+                          />
                         </div>
                       </div>
                       <div className="grid gap-2">
-                        <Label htmlFor="medications">Medications</Label>
+                        <Label htmlFor="medications">Medications (one per line)</Label>
                         <Textarea
                           id="medications"
-                          placeholder="List prescribed medications..."
+                          placeholder="Amoxicillin 500mg\nParacetamol 500mg"
                           rows={3}
+                          value={newPrescription.medications}
+                          onChange={(e) => setNewPrescription({...newPrescription, medications: e.target.value})}
                         />
                       </div>
                       <div className="grid gap-2">
-                        <Label htmlFor="prescription-image">Prescription Image</Label>
-                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                          <Camera className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                          <p className="text-sm text-gray-600 mb-2">Upload prescription image</p>
-                          <Button variant="outline" size="sm">
-                            Choose File
-                          </Button>
-                        </div>
+                        <Label htmlFor="imageUrl">Image URL (Optional)</Label>
+                        <Input
+                          id="imageUrl"
+                          placeholder="https://example.com/prescription.jpg"
+                          value={newPrescription.imageUrl}
+                          onChange={(e) => setNewPrescription({...newPrescription, imageUrl: e.target.value})}
+                        />
                       </div>
                     </div>
                     <div className="flex justify-end gap-2">
                       <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
                         Cancel
                       </Button>
-                      <Button className="bg-green-600 hover:bg-green-700">
+                      <Button 
+                        onClick={handleAddPrescription} 
+                        className="bg-green-600 hover:bg-green-700"
+                      >
                         Add Prescription
                       </Button>
                     </div>
@@ -245,9 +335,9 @@ export default function PrescriptionsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="Pending">Pending</SelectItem>
-                    <SelectItem value="Dispensed">Dispensed</SelectItem>
-                    <SelectItem value="Completed">Completed</SelectItem>
+                    <SelectItem value="PENDING">Pending</SelectItem>
+                    <SelectItem value="DISPENSED">Dispensed</SelectItem>
+                    <SelectItem value="COMPLETED">Completed</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -267,101 +357,129 @@ export default function PrescriptionsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredData.map((prescription) => (
-                      <TableRow key={prescription.id}>
-                        <TableCell className="font-medium">{prescription.patientName}</TableCell>
-                        <TableCell>{prescription.age}</TableCell>
-                        <TableCell>{prescription.gender}</TableCell>
-                        <TableCell>{prescription.doctor}</TableCell>
-                        <TableCell>{prescription.date}</TableCell>
-                        <TableCell>
-                          <div className="max-w-xs">
-                            {prescription.medications.slice(0, 2).map((med, index) => (
-                              <div key={index} className="text-sm">{med}</div>
-                            ))}
-                            {prescription.medications.length > 2 && (
-                              <div className="text-xs text-gray-500">
-                                +{prescription.medications.length - 2} more
-                              </div>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>{getStatusBadge(prescription.status)}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => setSelectedPrescription(prescription)}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent className="sm:max-w-[600px]">
-                                <DialogHeader>
-                                  <DialogTitle>Prescription Details</DialogTitle>
-                                  <DialogDescription>
-                                    View complete prescription information
-                                  </DialogDescription>
-                                </DialogHeader>
-                                {selectedPrescription && (
-                                  <div className="grid gap-4 py-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                      <div>
-                                        <Label className="text-sm font-medium">Patient Name</Label>
-                                        <p className="text-sm text-gray-600">{selectedPrescription.patientName}</p>
-                                      </div>
-                                      <div>
-                                        <Label className="text-sm font-medium">Age</Label>
-                                        <p className="text-sm text-gray-600">{selectedPrescription.age} years</p>
-                                      </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                      <div>
-                                        <Label className="text-sm font-medium">Gender</Label>
-                                        <p className="text-sm text-gray-600">{selectedPrescription.gender}</p>
-                                      </div>
-                                      <div>
-                                        <Label className="text-sm font-medium">Doctor</Label>
-                                        <p className="text-sm text-gray-600">{selectedPrescription.doctor}</p>
-                                      </div>
-                                    </div>
-                                    <div>
-                                      <Label className="text-sm font-medium">Prescribed Medications</Label>
-                                      <div className="mt-2 space-y-1">
-                                        {selectedPrescription.medications.map((med, index) => (
-                                          <div key={index} className="p-2 bg-gray-50 rounded text-sm">
-                                            {med}
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                    {selectedPrescription.hasImage && (
-                                      <div>
-                                        <Label className="text-sm font-medium">Prescription Image</Label>
-                                        <div className="mt-2 border rounded-lg p-4 bg-gray-50">
-                                          <div className="flex items-center justify-center h-32 text-gray-500">
-                                            <FileText className="h-8 w-8 mr-2" />
-                                            Prescription image available
-                                          </div>
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </DialogContent>
-                            </Dialog>
-                            {prescription.status === 'Pending' && (
-                              <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                                Dispense
-                              </Button>
-                            )}
-                          </div>
+                    {isLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-8">
+                          Loading prescriptions...
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ) : filteredData.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-8">
+                          No prescriptions found
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredData.map((prescription) => (
+                        <TableRow key={prescription.id}>
+                          <TableCell className="font-medium">{prescription.patientName}</TableCell>
+                          <TableCell>{prescription.age}</TableCell>
+                          <TableCell>{prescription.gender}</TableCell>
+                          <TableCell>{prescription.doctor}</TableCell>
+                          <TableCell>{new Date(prescription.date).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <div className="max-w-xs">
+                              {prescription.medications.slice(0, 2).map((med, index) => (
+                                <div key={index} className="text-sm">{med}</div>
+                              ))}
+                              {prescription.medications.length > 2 && (
+                                <div className="text-xs text-gray-500">
+                                  +{prescription.medications.length - 2} more
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>{getStatusBadge(prescription.status)}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setSelectedPrescription(prescription)}
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-[600px]">
+                                  <DialogHeader>
+                                    <DialogTitle>Prescription Details</DialogTitle>
+                                    <DialogDescription>
+                                      View complete prescription information
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  {selectedPrescription && (
+                                    <div className="grid gap-4 py-4">
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                          <Label className="text-sm font-medium">Patient Name</Label>
+                                          <p className="text-sm text-gray-600">{selectedPrescription.patientName}</p>
+                                        </div>
+                                        <div>
+                                          <Label className="text-sm font-medium">Age</Label>
+                                          <p className="text-sm text-gray-600">{selectedPrescription.age} years</p>
+                                        </div>
+                                      </div>
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                          <Label className="text-sm font-medium">Gender</Label>
+                                          <p className="text-sm text-gray-600">{selectedPrescription.gender}</p>
+                                        </div>
+                                        <div>
+                                          <Label className="text-sm font-medium">Doctor</Label>
+                                          <p className="text-sm text-gray-600">{selectedPrescription.doctor}</p>
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <Label className="text-sm font-medium">Prescribed Medications</Label>
+                                        <div className="mt-2 space-y-1">
+                                          {selectedPrescription.medications.map((med, index) => (
+                                            <div key={index} className="p-2 bg-gray-50 rounded text-sm">
+                                              {med}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                      {selectedPrescription.imageUrl && (
+                                        <div>
+                                          <Label className="text-sm font-medium">Prescription Image</Label>
+                                          <div className="mt-2">
+                                            <img 
+                                              src={selectedPrescription.imageUrl} 
+                                              alt="Prescription" 
+                                              className="w-full h-48 object-contain border rounded-lg"
+                                            />
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </DialogContent>
+                              </Dialog>
+                              {prescription.status === 'PENDING' && (
+                                <Button 
+                                  size="sm" 
+                                  className="bg-green-600 hover:bg-green-700"
+                                  onClick={() => handleUpdateStatus(prescription.id, 'DISPENSED')}
+                                >
+                                  Dispense
+                                </Button>
+                              )}
+                              {prescription.status === 'DISPENSED' && (
+                                <Button 
+                                  size="sm" 
+                                  className="bg-blue-600 hover:bg-blue-700"
+                                  onClick={() => handleUpdateStatus(prescription.id, 'COMPLETED')}
+                                >
+                                  Complete
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </div>
