@@ -2,9 +2,8 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { revalidatePath } from 'next/cache'
 
-// GET all inventory items with filtering
+// GET all inventory items with optimized filtering
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions)
   if (!session) {
@@ -16,33 +15,50 @@ export async function GET(request: Request) {
   const category = searchParams.get('category') || 'all'
 
   try {
+    // Build where clause more efficiently
+    const whereClause: any = {}
+    
+    if (searchTerm) {
+      whereClause.OR = [
+        { name: { contains: searchTerm, mode: 'insensitive' } },
+        { category: { contains: searchTerm, mode: 'insensitive' } },
+      ]
+    }
+    
+    if (category !== 'all') {
+      whereClause.category = category
+    }
+
+    // Select only needed fields to reduce data transfer
     const items = await prisma.inventoryItem.findMany({
-      where: {
-        AND: [
-          {
-            OR: [
-              { name: { contains: searchTerm, mode: 'insensitive' } },
-              { category: { contains: searchTerm, mode: 'insensitive' } },
-            ],
-          },
-          category !== 'all' ? { category } : {},
-        ],
+      where: whereClause,
+      select: {
+        id: true,
+        name: true,
+        batch: true,
+        quantity: true,
+        expiryDate: true,
+        category: true,
+        price: true,
       },
       orderBy: { createdAt: 'desc' },
     })
 
-    // Transform and add status field
+    // Transform data
     const transformed = items.map((item) => ({
       id: item.id,
       name: item.name,
-      batch: item.batch || item.id.slice(0, 6).toUpperCase(), // fallback if batch missing
+      batch: item.batch || item.id.slice(0, 6).toUpperCase(),
       quantity: item.quantity,
       expiry: item.expiryDate?.toISOString().split('T')[0] || 'N/A',
       category: item.category,
+      price: item.price,
       status: getItemStatus(item.quantity, item.expiryDate),
     }))
 
-    return NextResponse.json(transformed)
+    const response = NextResponse.json(transformed)
+    response.headers.set('Cache-Control', 's-maxage=60, stale-while-revalidate=30')
+    return response
   } catch (error) {
     console.error('Error fetching inventory:', error)
     return NextResponse.json(
@@ -70,20 +86,18 @@ export async function POST(request: Request) {
         quantity: Number(body.quantity),
         price: Number(body.price) || 0,
         expiryDate: body.expiry ? new Date(body.expiry) : null,
-        
       },
     })
 
-    // Log activity
+    // Log activity with MWK
     await prisma.activityLog.create({
       data: {
         type: 'ADD_STOCK',
-        message: `Added ${body.quantity} units of ${body.name}`,
+        message: `Added ${body.quantity} units of ${body.name} at MWK ${body.price} each`,
         userId: session.user.id,
       },
     })
 
-    revalidatePath('/inventory')
     return NextResponse.json(newItem, { status: 201 })
   } catch (error) {
     console.error('Error creating item:', error)

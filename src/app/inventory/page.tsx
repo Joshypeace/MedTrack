@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from 'react'
-import { Search, Filter, Plus, Edit, Trash2, Package, Calendar, AlertTriangle, Upload } from 'lucide-react'
+import { Search, Filter, Plus, Edit, Trash2, Package, Calendar, AlertTriangle, Upload, DollarSign } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -22,8 +22,8 @@ interface InventoryItem {
   batch: string
   quantity: number
   expiry: string
-  supplier: string
   category: string
+  price: number
   status: string
 }
 
@@ -33,37 +33,48 @@ export default function InventoryPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isImportWizardOpen, setIsImportWizardOpen] = useState(false)
   const [inventoryData, setInventoryData] = useState<InventoryItem[]>([])
+  const [filteredData, setFilteredData] = useState<InventoryItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [newItem, setNewItem] = useState({
     name: '',
     batch: '',
     quantity: 0,
     expiry: '',
-    supplier: '',
     category: '',
     price: 0
   })
 
-
   const fetchInventoryData = useCallback(async () => {
     try {
       setIsLoading(true)
-      const response = await fetch(
-        `/api/inventory?search=${searchTerm}&category=${selectedCategory === 'all' ? '' : selectedCategory}`
-      )
+      const queryParams = new URLSearchParams()
+      if (searchTerm) queryParams.append('search', searchTerm)
+      if (selectedCategory !== 'all') queryParams.append('category', selectedCategory)
+      
+      const response = await fetch(`/api/inventory?${queryParams.toString()}`)
+      if (!response.ok) throw new Error('Failed to fetch inventory')
+      
       const data = await response.json()
       setInventoryData(data)
+      setFilteredData(data)
     } catch (error) {
       console.error('Error fetching inventory:', error)
       toast.error('Failed to load inventory data')
     } finally {
       setIsLoading(false)
     }
-  },
+  }, [searchTerm, selectedCategory])
 
-   [searchTerm, selectedCategory])
+  // Debounce search to avoid too many API calls
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchInventoryData()
+    }, 300)
 
-   useInventoryUpdates(fetchInventoryData)
+    return () => clearTimeout(timeoutId)
+  }, [searchTerm, selectedCategory, fetchInventoryData])
+
+  useInventoryUpdates(fetchInventoryData)
 
   const getStatusBadge = (status: string, quantity: number) => {
     if (quantity === 0) {
@@ -98,7 +109,6 @@ export default function InventoryPage() {
         batch: '',
         quantity: 0,
         expiry: '',
-        supplier: '',
         category: '',
         price: 0
       })
@@ -127,19 +137,13 @@ export default function InventoryPage() {
     }
   }
 
-  const filteredData = inventoryData.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.batch.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory
-    return matchesSearch && matchesCategory
-  })
-
   // Calculate summary stats
   const summaryStats = {
     totalItems: inventoryData.length,
     lowStock: inventoryData.filter(item => item.quantity < 10 && item.quantity > 0).length,
     expiringSoon: inventoryData.filter(item => item.status === 'Expires Soon').length,
     outOfStock: inventoryData.filter(item => item.quantity === 0).length,
+    totalValue: inventoryData.reduce((sum, item) => sum + (item.quantity * item.price), 0),
   }
 
   return (
@@ -155,7 +159,7 @@ export default function InventoryPage() {
           </div>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
             <Card className="card-enhanced">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Items</CardTitle>
@@ -197,6 +201,19 @@ export default function InventoryPage() {
               <CardContent>
                 <div className="text-2xl font-bold text-red-600">{summaryStats.outOfStock}</div>
                 <p className="text-xs text-muted-foreground">Items unavailable</p>
+              </CardContent>
+            </Card>
+
+            <Card className="card-enhanced">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Value</CardTitle>
+                <DollarSign className="h-4 w-4 text-green-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">
+                  MWK {summaryStats.totalValue.toLocaleString('en-US')}
+                </div>
+                <p className="text-xs text-muted-foreground">Inventory value</p>
               </CardContent>
             </Card>
           </div>
@@ -272,15 +289,6 @@ export default function InventoryPage() {
                           </div>
                         </div>
                         <div className="grid gap-2">
-                          <Label htmlFor="supplier">Supplier</Label>
-                          <Input
-                            id="supplier"
-                            placeholder="e.g., PharmaCorp Ltd"
-                            value={newItem.supplier}
-                            onChange={(e) => setNewItem({...newItem, supplier: e.target.value})}
-                          />
-                        </div>
-                        <div className="grid gap-2">
                           <Label htmlFor="category">Category</Label>
                           <Select
                             value={newItem.category}
@@ -299,10 +307,11 @@ export default function InventoryPage() {
                           </Select>
                         </div>
                         <div className="grid gap-2">
-                          <Label htmlFor="price">Unit Price</Label>
+                          <Label htmlFor="price">Unit Price (MWK)</Label>
                           <Input
                             id="price"
                             type="number"
+                            step="0.01"
                             placeholder="0.00"
                             value={newItem.price}
                             onChange={(e) => setNewItem({...newItem, price: Number(e.target.value)})}
@@ -358,8 +367,8 @@ export default function InventoryPage() {
                       <TableHead>Batch Number</TableHead>
                       <TableHead>Quantity</TableHead>
                       <TableHead>Expiry Date</TableHead>
-                      <TableHead>Supplier</TableHead>
                       <TableHead>Category</TableHead>
+                      <TableHead>Unit Price (MWK)</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -388,8 +397,8 @@ export default function InventoryPage() {
                             </span>
                           </TableCell>
                           <TableCell>{item.expiry}</TableCell>
-                          <TableCell>{item.supplier}</TableCell>
                           <TableCell>{item.category}</TableCell>
+                          <TableCell>MWK {item.price.toLocaleString('en-US')}</TableCell>
                           <TableCell>{getStatusBadge(item.status, item.quantity)}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
