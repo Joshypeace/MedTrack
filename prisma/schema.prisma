@@ -8,17 +8,34 @@ datasource db {
 }
 
 model User {
-  id        String        @id @default(cuid())
-  email     String        @unique
-  password  String
-  name      String
-  role      Role          @default(ADMIN)
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  logs      ActivityLog[]
-  sales     Sale[]
-  pharmacy  Pharmacy?     @relation(fields: [pharmacyId], references: [id])
-  pharmacyId String?
+  id           String         @id @default(cuid())
+  email        String         @unique
+  password     String
+  name         String
+  role         Role           @default(ADMIN)
+  status       UserStatus     @default(ACTIVE)
+  lastLogin    DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  logs         ActivityLog[]
+  sales        Sale[]
+  pharmacy     Pharmacy?      @relation(fields: [pharmacyId], references: [id])
+  pharmacyId   String?
+  prescriptions Prescription[]
+  expenses     Expense[]
+  permissions  UserPermission[]
+}
+
+model UserPermission {
+  id        String   @id @default(cuid())
+  module    PermissionModule
+  canView   Boolean  @default(false)
+  canEdit   Boolean  @default(false)
+  canDelete Boolean  @default(false)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Pharmacy {
@@ -56,6 +73,8 @@ model Sale {
   userId     String
   item       InventoryItem @relation(fields: [itemId], references: [id])
   soldBy     User          @relation(fields: [userId], references: [id])
+  prescriptionId String?  
+  prescription   Prescription? @relation(fields: [prescriptionId], references: [id])
 }
 
 model ActivityLog {
@@ -67,9 +86,62 @@ model ActivityLog {
   user      User         @relation(fields: [userId], references: [id])
 }
 
+model Prescription {
+  id          String   @id @default(cuid())
+  patientName String
+  age         Int
+  gender      String
+  doctor      String
+  date        DateTime @default(now())
+  status      PrescriptionStatus @default(PENDING)
+  medications String[] 
+  imageUrl    String? 
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  sales       Sale[]
+}
+
+
+
+model Expense {
+  id          String   @id @default(cuid())
+  category    String
+  amount      Float
+  description String?
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+enum ExpenseCategory {
+  SALARIES
+  RENT
+  UTILITIES
+  INSURANCE
+  MARKETING
+  MAINTENANCE
+  LICENSES
+  OTHER
+}
+
+
+enum PrescriptionStatus {
+  PENDING
+  DISPENSED
+  COMPLETED
+}
+
 enum Role {
   ADMIN
   WORKER
+  PHARMACIST
+  TECHNICIAN
+  CASHIER
+  ASSISTANT
 }
 
 enum ActivityType {
@@ -79,4 +151,19 @@ enum ActivityType {
   UPDATE_STOCK
   DELETE_STOCK
   SALE
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum PermissionModule {
+  INVENTORY
+  SALES
+  PRESCRIPTIONS
+  REPORTS
+  USERS
+  SETTINGS
 }
