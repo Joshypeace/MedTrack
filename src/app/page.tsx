@@ -222,7 +222,7 @@ export default function LandingPage() {
               className="opacity-0 translate-x-[50px] transition-all duration-1000 ease-out delay-200 relative"
             >
               <img
-                src="/modern-pharmacy.png"
+                src="/medicines.jpg"
                 alt="Modern pharmacy interior with organized medicine shelves"
                 className="rounded-2xl shadow-2xl border-8 border-white transform rotate-2 hover:rotate-0 transition-transform duration-500"
               />
@@ -435,7 +435,7 @@ export default function LandingPage() {
               className="opacity-0 translate-x-[50px] transition-all duration-1000 ease-out delay-200"
             >
               <img
-                src="/pharmacist-computer-medicines.png"
+                src="/pharmacist_working.jpg"
                 alt="Pharmacist working with digital inventory system"
                 className="rounded-2xl shadow-2xl border-8 border-white transform hover:scale-105 transition-transform duration-500"
               />
@@ -461,7 +461,7 @@ export default function LandingPage() {
               <Card
                 key={index}
                 data-animate="fade-up"
-                className={`opacity-0 translate-y-[30px] transition-all duration-1000 ease-out card-enhanced hover:shadow-xl transform hover:-translate-y-2 transition-all duration-300`}
+                className={`opacity-1 translate-y-[30px] transition-all duration-1000 ease-out card-enhanced hover:shadow-xl transform hover:-translate-y-2 transition-all duration-300`}
                 style={{ transitionDelay: `${Number.parseInt(testimonial.delay)}ms` }}
               >
                 <CardContent className="pt-6">
