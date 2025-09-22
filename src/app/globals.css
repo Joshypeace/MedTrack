@@ -79,6 +79,10 @@
   .button-secondary {
     @apply bg-gradient-to-r from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 shadow-md rounded-xl transition-all duration-200;
   }
+
+  .custom-cell-size {
+    --cell-size: 2rem; 
+  }
 }
 
 /* Smooth scroll behavior */
