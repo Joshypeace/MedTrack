@@ -29,6 +29,7 @@
     --chart-3: 43 96% 56%;
     --chart-4: 27 87% 67%;
     --chart-5: 340 75% 55%;
+    --spacing-8: 2rem;
   }
 
   .dark {
@@ -81,7 +82,7 @@
   }
 
   .custom-cell-size {
-    --cell-size: 2rem; 
+    --cell-size: var(--spacing-8); 
   }
 }
 
