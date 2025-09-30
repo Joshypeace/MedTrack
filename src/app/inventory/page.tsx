@@ -13,7 +13,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import Sidebar from '@/components/layout/sidebar'
 import Header from '@/components/layout/header'
 import ImportWizard from '@/components/import-wizard/import-wizard'
-import { useInventoryUpdates } from '@/hooks/useInventoryUpdates'
 import { toast } from 'sonner'
 
 interface InventoryItem {
@@ -74,7 +73,9 @@ export default function InventoryPage() {
     return () => clearTimeout(timeoutId)
   }, [searchTerm, selectedCategory, fetchInventoryData])
 
-  useInventoryUpdates(fetchInventoryData)
+  useEffect(() => {
+  fetchInventoryData()
+}, [])
 
   const getStatusBadge = (status: string, quantity: number) => {
     if (quantity === 0) {
