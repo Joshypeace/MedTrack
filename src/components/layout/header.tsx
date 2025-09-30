@@ -1,6 +1,6 @@
 "use client"
 
-import { Bell, User, LogOut, CreditCard, Settings, HelpCircle, Crown } from "lucide-react"
+import { Bell, User, LogOut, CreditCard, Settings, Crown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -12,19 +12,23 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
-import { useSession } from "next-auth/react"
+import { useSession, signOut } from "next-auth/react"
+import { useRouter } from "next/navigation"
 
 export default function Header() {
-
   const { data: session } = useSession();
-  
-  if (!session){
+  const router = useRouter();
+
+  if (!session) {
     return <p>Loading or not authenticated</p>;
   }
 
-  const userName = session.user.name;
+  const userName = session.user?.name ?? "User";
 
-
+  const handleLogout = async () => {
+    await signOut({ redirect: false });
+    router.push("/");
+  };
 
   return (
     <header className="bg-gradient-to-r from-white to-slate-50/80 backdrop-blur-sm shadow-lg shadow-slate-200/30 border-b border-slate-200/50 px-6 py-4">
@@ -96,13 +100,7 @@ export default function Header() {
                   Settings
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <HelpCircle className="mr-2 h-4 w-4" />
-                Help & Support
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Sign out
               </DropdownMenuItem>
