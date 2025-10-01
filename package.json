@@ -79,7 +79,6 @@
     "@prisma/client": "^6.13.0"
   },
   "devDependencies": {
-    "@prisma/client": "^6.13.0",
     "@types/bcrypt": "^6.0.0",
     "@types/node": "^22",
     "@types/react": "^19",
