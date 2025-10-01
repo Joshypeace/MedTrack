@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import Sidebar from '@/components/layout/sidebar'
 import Header from '@/components/layout/header'
+import { Prisma } from '@prisma/client'
 
 interface Medicine {
   id: string
@@ -45,7 +46,7 @@ export default function SalesPage() {
         if (response.ok) {
           const data = await response.json()
           // Ensure all medicines have required fields with fallbacks
-          const medicinesWithDefaults = data.map((medicine: any) => ({
+          const medicinesWithDefaults = data.map((medicine: Prisma.InventoryItemCreateInput) => ({
             id: medicine.id || '',
             name: medicine.name || 'Unknown Medicine',
             price: medicine.price ?? 0, // Fallback to 0 if price is undefined

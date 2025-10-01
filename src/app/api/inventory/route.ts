@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 // GET all inventory items with optimized filtering
 export async function GET(request: Request) {
@@ -15,8 +16,8 @@ export async function GET(request: Request) {
   const category = searchParams.get('category') || 'all'
 
   try {
-    // Build where clause more efficiently
-    const whereClause: any = {}
+  
+    const whereClause: Prisma.InventoryItemWhereInput = {}
     
     if (searchTerm) {
       whereClause.OR = [

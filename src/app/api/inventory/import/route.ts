@@ -95,19 +95,18 @@ export async function POST(request: NextRequest) {
             userId: session.user.id,
           }
         });
-        
         results.successful++;
-      } catch (error: any) {
+      } catch (error: unknown) {
         results.failed++;
-        results.errors.push(`Row ${index + 2}: ${error.message}`);
+        results.errors.push(`Row ${index + 2}: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
 
     return NextResponse.json(results);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('CSV import error:', error);
     return NextResponse.json(
-      { error: 'Failed to process CSV file: ' + error.message }, 
+      { error: 'Failed to process CSV file: ' + (error instanceof Error ? error.message : 'Unknown error') }, 
       { status: 500 }
     );
   }
@@ -191,8 +190,8 @@ function mapRecordToInventoryItem(record: CsvRecord, columnMapping?: ColumnMappi
       expiryDate,
       batch,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Add more context to the error message
-    throw new Error(`${error.message}. Record: ${JSON.stringify(record)}`);
+    throw new Error(`${error instanceof Error ? error.message : 'Unknown error'}. Record: ${JSON.stringify(record)}`);
   }
 }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions)
@@ -15,7 +16,7 @@ export async function GET(request: Request) {
   const period = searchParams.get('period') || 'month'
 
   try {
-    const whereClause: any = {
+    const whereClause: Prisma.SaleWhereInput = {
       userId: session.user.id,
     }
 

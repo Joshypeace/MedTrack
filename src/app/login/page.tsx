@@ -103,7 +103,7 @@ export default function LoginPage() {
           </div>
           {/* Added registration link */}
           <div className="text-center text-sm">
-            <span className="text-gray-600">Don't have an account? </span>
+            <span className="text-gray-600">{`Don't have an account? `}</span>
             <Link href="/register" className="text-green-600 hover:text-green-700 font-medium">
               Create!
             </Link>

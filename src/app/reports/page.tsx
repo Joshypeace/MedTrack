@@ -291,7 +291,7 @@ export default function ReportsPage() {
         theme: 'grid'
       })
 
-      let y = doc.lastAutoTable.finalY + 20
+      const y = doc.lastAutoTable.finalY + 20
       
       // COGS section
       doc.setFontSize(16)
@@ -384,7 +384,7 @@ export default function ReportsPage() {
             <CardHeader>
               <CardTitle>Report Filters</CardTitle>
               <CardDescription>
-                Select a date range for your reports. Choose "Custom Range" to specify exact start and end dates.
+                {`Select a date range for your reports. Choose "Custom Range" to specify exact start and end dates.`}
               </CardDescription>
             </CardHeader>
             <CardContent>

@@ -7,7 +7,20 @@ import { Button } from '@/components/ui/button'
 import { Check, X, ChevronDown, ChevronUp } from 'lucide-react'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 
-const COLUMN_OPTIONS = [
+// Define types
+type ColumnOptionValue = 'name' | 'batch' | 'quantity' | 'expiry' | 'supplier' | 'category' | 'ignore'
+
+interface ColumnOption {
+  value: ColumnOptionValue
+  label: string
+}
+
+interface ColumnMappingProps {
+  sampleData: Record<string, unknown>[]
+  onComplete: (mapping: Record<string, string>) => void
+}
+
+const COLUMN_OPTIONS: ColumnOption[] = [
   { value: 'name', label: 'Medicine Name' },
   { value: 'batch', label: 'Batch Number' },
   { value: 'quantity', label: 'Quantity' },
@@ -17,7 +30,7 @@ const COLUMN_OPTIONS = [
   { value: 'ignore', label: 'Ignore Column' }
 ]
 
-export function ColumnMapping({ sampleData, onComplete }: { sampleData: any[], onComplete: (mapping: Record<string, string>) => void }) {
+export function ColumnMapping({ sampleData, onComplete }: ColumnMappingProps) {
   const [mapping, setMapping] = useState<Record<string, string>>({})
   const [previewRows, setPreviewRows] = useState(5)
 
@@ -36,6 +49,18 @@ export function ColumnMapping({ sampleData, onComplete }: { sampleData: any[], o
     onComplete(mapping)
   }
 
+  const togglePreviewRows = () => {
+    setPreviewRows(prev => (prev === 5 ? 10 : 5))
+  }
+
+  const formatCellValue = (value: unknown): string => {
+    if (value === null || value === undefined) return ''
+    if (typeof value === 'string') return value
+    if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+    if (value instanceof Date) return value.toLocaleDateString()
+    return String(value)
+  }
+
   return (
     <div className="space-y-4">
       <h3 className="font-medium">Map your columns to our system</h3>
@@ -49,7 +74,10 @@ export function ColumnMapping({ sampleData, onComplete }: { sampleData: any[], o
             <TableRow>
               {columns.map(col => (
                 <TableHead key={col}>
-                  <Select value={mapping[col] || ''} onValueChange={value => handleMappingChange(col, value)}>
+                  <Select 
+                    value={mapping[col] || ''} 
+                    onValueChange={(value: string) => handleMappingChange(col, value)}
+                  >
                     <SelectTrigger className="border-none shadow-none h-8">
                       <SelectValue placeholder="Select field" />
                     </SelectTrigger>
@@ -66,11 +94,11 @@ export function ColumnMapping({ sampleData, onComplete }: { sampleData: any[], o
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sampleData.slice(0, previewRows).map((row, i) => (
-              <TableRow key={i}>
-                {columns.map(col => (
+            {sampleData.slice(0, previewRows).map((row, index) => (
+              <TableRow key={index}>
+                {columns.map((col) => (
                   <TableCell key={col} className="max-w-[200px] truncate">
-                    {String(row[col])}
+                    {formatCellValue(row[col])}
                   </TableCell>
                 ))}
               </TableRow>
@@ -83,7 +111,7 @@ export function ColumnMapping({ sampleData, onComplete }: { sampleData: any[], o
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setPreviewRows(prev => (prev === 5 ? 10 : 5))}
+          onClick={togglePreviewRows}
           className="text-sm text-gray-600"
         >
           {previewRows === 5 ? (

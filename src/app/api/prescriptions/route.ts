@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { Prisma, PrescriptionStatus } from '@prisma/client'
 
 // GET all prescriptions with filtering
 export async function GET(request: Request) {
@@ -15,7 +16,8 @@ export async function GET(request: Request) {
   const status = searchParams.get('status') || 'all'
 
   try {
-    const whereClause: any = {
+    const whereClause: Prisma.PrescriptionWhereInput = {
+      status: PrescriptionStatus.COMPLETED,
       userId: session.user.id,
     }
 
@@ -27,7 +29,7 @@ export async function GET(request: Request) {
     }
 
     if (status !== 'all') {
-      whereClause.status = status
+      whereClause.status = status as PrescriptionStatus
     }
 
     const prescriptions = await prisma.prescription.findMany({

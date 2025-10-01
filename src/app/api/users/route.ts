@@ -3,6 +3,18 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { Prisma, Role, PermissionModule } from '@prisma/client'
+
+// Define types for permissions
+interface PermissionAccess {
+  view: boolean
+  edit: boolean
+  delete: boolean
+}
+
+interface Permissions {
+  [module: string]: PermissionAccess
+}
 
 // GET all users with filtering
 export async function GET(request: Request) {
@@ -16,7 +28,7 @@ export async function GET(request: Request) {
   const role = searchParams.get('role') || 'all'
 
   try {
-    const whereClause: any = {}
+    const whereClause: Prisma.UserWhereInput = {}
 
     if (searchTerm) {
       whereClause.OR = [
@@ -26,7 +38,11 @@ export async function GET(request: Request) {
     }
 
     if (role !== 'all') {
-      whereClause.role = role
+      // Validate and cast the role to the Role enum
+      const validRoles = Object.values(Role)
+      if (validRoles.includes(role as Role)) {
+        whereClause.role = role as Role
+      }
     }
 
     const users = await prisma.user.findMany({
@@ -80,6 +96,15 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { name, email, password, role, permissions } = body
 
+    // Validate role
+    const validRoles = Object.values(Role)
+    if (!validRoles.includes(role)) {
+      return NextResponse.json(
+        { error: 'Invalid role provided' },
+        { status: 400 }
+      )
+    }
+
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { email },
@@ -101,14 +126,20 @@ export async function POST(request: Request) {
         name,
         email,
         password: hashedPassword,
-        role,
+        role: role as Role,
         permissions: {
-          create: Object.entries(permissions).map(([module, access]) => ({
-            module: module.toUpperCase() as any,
-            canView: (access as any).view || false,
-            canEdit: (access as any).edit || false,
-            canDelete: (access as any).delete || false,
-          })),
+          create: Object.entries(permissions).map(([module, access]) => {
+            const permissionAccess = access as PermissionAccess
+
+            const normalizedModule = module.toUpperCase() as keyof typeof PermissionModule
+            const moduleEnum = PermissionModule[normalizedModule]
+            return {
+              module: moduleEnum,
+              canView: permissionAccess.view || false,
+              canEdit: permissionAccess.edit || false,
+              canDelete: permissionAccess.delete || false,
+            }
+          }),
         },
       },
       include: {
@@ -126,7 +157,7 @@ export async function POST(request: Request) {
     })
 
     // Remove password from response
-    const { password: _, ...userWithoutPassword } = newUser
+    const { password: removedPassword, ...userWithoutPassword } = newUser
 
     return NextResponse.json(userWithoutPassword, { status: 201 })
   } catch (error) {
@@ -147,13 +178,28 @@ export async function PATCH(request: Request) {
 
   try {
     const body = await request.json()
-    const { userId, permissions, status } = body
+    const { userId, permissions, status, role } = body
 
-    // Update user status if provided
+    // Prepare update data
+    const updateData: Prisma.UserUpdateInput = {}
+
     if (status) {
+      updateData.status = status
+    }
+
+    if (role) {
+      // Validate role
+      const validRoles = Object.values(Role)
+      if (validRoles.includes(role)) {
+        updateData.role = role as Role
+      }
+    }
+
+    // Update user if there's data to update
+    if (Object.keys(updateData).length > 0) {
       await prisma.user.update({
         where: { id: userId },
-        data: { status },
+        data: updateData,
       })
     }
 
@@ -166,13 +212,19 @@ export async function PATCH(request: Request) {
 
       // Create new permissions
       await prisma.userPermission.createMany({
-        data: Object.entries(permissions).map(([module, access]) => ({
-          module: module.toUpperCase() as any,
-          canView: (access as any).view || false,
-          canEdit: (access as any).edit || false,
-          canDelete: (access as any).delete || false,
-          userId,
-        })),
+        data: Object.entries(permissions).map(([module, access]) => {
+          const permissionAccess = access as PermissionAccess
+
+            const normalizedModule = module.toUpperCase() as keyof typeof PermissionModule
+            const moduleEnum = PermissionModule[normalizedModule]
+          return {
+            module: moduleEnum,
+            canView: permissionAccess.view || false,
+            canEdit: permissionAccess.edit || false,
+            canDelete: permissionAccess.delete || false,
+            userId,
+          }
+        }),
       })
     }
 

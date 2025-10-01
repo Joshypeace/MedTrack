@@ -138,7 +138,7 @@ export default function BillingPage() {
                           <div className="text-slate-600">January 15, 2024</div>
                         </div>
                         <div className="text-sm text-slate-500">
-                          After your trial ends, you'll be charged MK20,000 monthly
+                         {` After your trial ends, you'll be charged MK20,000 monthly`}
                         </div>
                       </>
                     ) : (
