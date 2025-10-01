@@ -4,42 +4,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-// Define types for the grouped data
-interface WeeklySaleData {
-  createdAt: Date
-  _sum: {
-    totalPrice: number | null
-  }
-}
-
-interface StockDistributionData {
-  category: string
-  _sum: {
-    quantity: number | null
-  }
-}
-
-interface TopDrugData {
-  itemId: string
-  _sum: {
-    quantity: number | null
-  }
-}
-
-interface StockAlertItem {
-  id: string
-  name: string
-  quantity: number
-  expiryDate: Date | null
-}
-
-// interface FormattedAlert {
-//   name: string
-//   status: 'Low Stock' | 'Expires Soon'
-//   level: string
-//   type: 'danger' | 'warning'
-// }
-
 export async function GET() {
   const session = await getServerSession(authOptions)
 
@@ -133,10 +97,10 @@ export async function GET() {
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
     const weeklySales = days.map(day => ({
       name: day,
-      sales: 0 // Initialize with 0
+      sales: 0
     }))
 
-    weeklySalesData.forEach((sale: WeeklySaleData) => {
+    weeklySalesData.forEach(sale => {
       const dayIndex = sale.createdAt.getDay()
       weeklySales[dayIndex].sales += sale._sum.totalPrice || 0
     })
@@ -149,7 +113,7 @@ export async function GET() {
       }
     })
 
-    const stockDistribution = stockDistributionData.map((item: StockDistributionData) => ({
+    const stockDistribution = stockDistributionData.map(item => ({
       name: item.category,
       value: item._sum.quantity || 0,
       color: getCategoryColor(item.category)
@@ -179,19 +143,19 @@ export async function GET() {
 
     // Get item details for top drugs
     const topDrugsWithDetails = await Promise.all(
-      topDrugs.map(async (sale: TopDrugData) => {
+      topDrugs.map(async sale => {
         const item = await prisma.inventoryItem.findUnique({
           where: { id: sale.itemId }
         })
         return {
           name: item?.name || 'Unknown',
           quantity: `${sale._sum.quantity} ${item?.name?.includes('tablet') ? 'tablets' : 'units'}`,
-          trend: '+0%' // You would calculate this based on previous period
+          trend: '+0%'
         }
       })
     )
 
-    // Get stock alerts
+    // Get stock alerts - explicitly type the result
     const stockAlerts = await prisma.inventoryItem.findMany({
       where: {
         OR: [
@@ -207,16 +171,17 @@ export async function GET() {
       take: 4
     })
 
-    const formattedAlerts = stockAlerts.map((item: StockAlertItem) => ({
+    // Explicitly type the formattedAlerts mapping
+    const formattedAlerts = stockAlerts.map((item: { id: string; name: string; quantity: number; expiryDate: Date | null }) => ({
       name: item.name,
-      status: item.quantity < 5 ? 'Low Stock' as const : 'Expires Soon' as const,
+      status: item.quantity < 5 ? 'Low Stock' : 'Expires Soon',
       level: item.quantity < 5 
         ? `${item.quantity} remaining` 
         : `Exp: ${item.expiryDate?.toLocaleDateString() || 'Unknown'}`,
-      type: item.quantity < 3 ? 'danger' as const : 'warning' as const
+      type: item.quantity < 3 ? 'danger' : 'warning'
     }))
 
-    // Get active users (simplified - in real app you'd track sessions)
+    // Get active users
     const activeUsers = await prisma.user.count()
 
     return NextResponse.json({
