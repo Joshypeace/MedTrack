@@ -1,10 +1,8 @@
 // src/app/api/auth/register/route.ts
 import { NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/prisma' // Use your existing prisma instance
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
-
-const prisma = new PrismaClient()
 
 // Validation schema
 const registerSchema = z.object({
@@ -103,13 +101,16 @@ export async function POST(request: Request) {
       return { pharmacy, user }
     })
 
+    // Remove password from response
+    const { password: _, ...userWithoutPassword } = result.user
+
     return NextResponse.json(
       { 
         success: true, 
         message: 'Registration successful',
         data: {
           pharmacyId: result.pharmacy.id,
-          userId: result.user.id
+          user: userWithoutPassword
         }
       },
       { status: 201 }
