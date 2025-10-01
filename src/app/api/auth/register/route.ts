@@ -1,8 +1,9 @@
 // src/app/api/auth/register/route.ts
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma' // Use your existing prisma instance
+import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 
 // Validation schema
 const registerSchema = z.object({
@@ -65,7 +66,7 @@ export async function POST(request: Request) {
     const hashedPassword = await bcrypt.hash(password, 12)
 
     // Create pharmacy and user in transaction
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Create pharmacy
       const pharmacy = await tx.pharmacy.create({
         data: {
