@@ -26,6 +26,20 @@ interface TopDrugData {
   }
 }
 
+interface StockAlertItem {
+  id: string
+  name: string
+  quantity: number
+  expiryDate: Date | null
+}
+
+// interface FormattedAlert {
+//   name: string
+//   status: 'Low Stock' | 'Expires Soon'
+//   level: string
+//   type: 'danger' | 'warning'
+// }
+
 export async function GET() {
   const session = await getServerSession(authOptions)
 
@@ -171,7 +185,7 @@ export async function GET() {
         })
         return {
           name: item?.name || 'Unknown',
-          quantity: `${sale._sum.quantity} ${item?.name.includes('tablet') ? 'tablets' : 'units'}`,
+          quantity: `${sale._sum.quantity} ${item?.name?.includes('tablet') ? 'tablets' : 'units'}`,
           trend: '+0%' // You would calculate this based on previous period
         }
       })
@@ -193,12 +207,12 @@ export async function GET() {
       take: 4
     })
 
-    const formattedAlerts = stockAlerts.map(item => ({
+    const formattedAlerts = stockAlerts.map((item: StockAlertItem) => ({
       name: item.name,
-      status: item.quantity < 5 ? 'Low Stock' : 'Expires Soon',
+      status: item.quantity < 5 ? 'Low Stock' as const : 'Expires Soon' as const,
       level: item.quantity < 5 
         ? `${item.quantity} remaining` 
-        : `Exp: ${item.expiryDate?.toLocaleDateString()}`,
+        : `Exp: ${item.expiryDate?.toLocaleDateString() || 'Unknown'}`,
       type: item.quantity < 3 ? 'danger' as const : 'warning' as const
     }))
 
