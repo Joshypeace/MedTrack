@@ -4,6 +4,28 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
+// Define types for the grouped data
+interface WeeklySaleData {
+  createdAt: Date
+  _sum: {
+    totalPrice: number | null
+  }
+}
+
+interface StockDistributionData {
+  category: string
+  _sum: {
+    quantity: number | null
+  }
+}
+
+interface TopDrugData {
+  itemId: string
+  _sum: {
+    quantity: number | null
+  }
+}
+
 export async function GET() {
   const session = await getServerSession(authOptions)
 
@@ -100,7 +122,7 @@ export async function GET() {
       sales: 0 // Initialize with 0
     }))
 
-    weeklySalesData.forEach(sale => {
+    weeklySalesData.forEach((sale: WeeklySaleData) => {
       const dayIndex = sale.createdAt.getDay()
       weeklySales[dayIndex].sales += sale._sum.totalPrice || 0
     })
@@ -113,7 +135,7 @@ export async function GET() {
       }
     })
 
-    const stockDistribution = stockDistributionData.map(item => ({
+    const stockDistribution = stockDistributionData.map((item: StockDistributionData) => ({
       name: item.category,
       value: item._sum.quantity || 0,
       color: getCategoryColor(item.category)
@@ -143,7 +165,7 @@ export async function GET() {
 
     // Get item details for top drugs
     const topDrugsWithDetails = await Promise.all(
-      topDrugs.map(async sale => {
+      topDrugs.map(async (sale: TopDrugData) => {
         const item = await prisma.inventoryItem.findUnique({
           where: { id: sale.itemId }
         })
@@ -177,7 +199,7 @@ export async function GET() {
       level: item.quantity < 5 
         ? `${item.quantity} remaining` 
         : `Exp: ${item.expiryDate?.toLocaleDateString()}`,
-      type: item.quantity < 3 ? 'danger' : 'warning' as const
+      type: item.quantity < 3 ? 'danger' as const : 'warning' as const
     }))
 
     // Get active users (simplified - in real app you'd track sessions)
