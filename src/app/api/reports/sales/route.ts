@@ -13,7 +13,6 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const startDate = searchParams.get('startDate')
   const endDate = searchParams.get('endDate')
-  const period = searchParams.get('period') || 'month'
 
   try {
     const whereClause: Prisma.SaleWhereInput = {

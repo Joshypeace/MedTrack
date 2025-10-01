@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { CheckCircle, AlertCircle, Upload, Download, Map } from 'lucide-react';
+import { CheckCircle, AlertCircle, Upload, Map } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -114,10 +114,10 @@ export default function ImportWizard({ isOpen, onClose, onSuccess }: ImportWizar
         setColumnMapping(autoMapped);
         
         setShowMapping(true);
-        
-      } catch (error: any) {
-        console.error('File processing error:', error);
-        toast.error('Failed to process file: ' + error.message);
+
+      } catch {
+        console.error('File processing error:');
+        toast.error('Failed to process file: ');
       } finally {
         setIsProcessing(false);
       }
@@ -198,9 +198,9 @@ export default function ImportWizard({ isOpen, onClose, onSuccess }: ImportWizar
       if (result.failed > 0) {
         toast.error(`${result.failed} items failed to import`);
       }
-    } catch (error: any) {
-      console.error('Import error:', error);
-      toast.error(error.message || 'Failed to import file');
+    } catch {
+      console.error('Import error:');
+      toast.error('Failed to import file');
     } finally {
       setIsProcessing(false);
     }

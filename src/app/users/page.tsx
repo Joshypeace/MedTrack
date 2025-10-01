@@ -135,9 +135,9 @@ export default function UsersPage() {
         }
       })
       fetchUsers()
-    } catch (error: any) {
-      console.error('Error creating user:', error)
-      toast.error(error.message || 'Failed to create user')
+    } catch {
+      console.error('Error creating user:')
+      toast.error( 'Failed to create user')
     }
   }
 

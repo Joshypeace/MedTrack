@@ -12,9 +12,9 @@ interface PermissionAccess {
   delete: boolean
 }
 
-interface Permissions {
-  [module: string]: PermissionAccess
-}
+// interface Permissions {
+//   [module: string]: PermissionAccess
+// }
 
 // GET all users with filtering
 export async function GET(request: Request) {

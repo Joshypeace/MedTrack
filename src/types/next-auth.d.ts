@@ -16,8 +16,8 @@ declare module "next-auth" {
     role: Role;
   }
 
-  // ✅ If using Prisma Adapter (AdapterUser)
-  interface AdapterUser extends User {}
+ 
+  type AdapterUser = User;
 }
 
 declare module "next-auth/jwt" {

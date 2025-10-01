@@ -27,7 +27,7 @@ export async function GET() {
       take: 100, // Limit to 100 most recent logs
     })
     return NextResponse.json(logs)
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to fetch activity logs' },
       { status: 500 }

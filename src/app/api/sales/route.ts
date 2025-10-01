@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { items, paymentMethod, total } = await request.json()
+    const { items, total } = await request.json()
     
     // Get the current user
     const user = await prisma.user.findUnique({
