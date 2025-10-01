@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
-import { Prisma } from '@prisma/client'
 
 // Validation schema
 const registerSchema = z.object({
@@ -65,10 +64,9 @@ export async function POST(request: Request) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12)
 
-    // Create pharmacy and user in transaction
-    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      // Create pharmacy
-      const pharmacy = await tx.pharmacy.create({
+    // Create pharmacy and user in transaction - use the correct transaction syntax
+    const [pharmacy, user] = await prisma.$transaction([
+      prisma.pharmacy.create({
         data: {
           name: pharmacyName,
           licenseNumber,
@@ -77,40 +75,42 @@ export async function POST(request: Request) {
           phone,
           location
         }
-      })
-
-      // Create admin user
-      const user = await tx.user.create({
+      }),
+      prisma.user.create({
         data: {
           email,
           password: hashedPassword,
           name: ownerName,
           role: 'ADMIN',
-          pharmacyId: pharmacy.id
+          pharmacyId: '' // This will be set after pharmacy creation
         }
       })
+    ])
 
-      // Create activity log
-      await tx.activityLog.create({
-        data: {
-          type: 'LOGIN',
-          message: 'Pharmacy account created and admin user registered',
-          userId: user.id
-        }
-      })
+    // Update user with pharmacy ID
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { pharmacyId: pharmacy.id }
+    })
 
-      return { pharmacy, user }
+    // Create activity log
+    await prisma.activityLog.create({
+      data: {
+        type: 'LOGIN',
+        message: 'Pharmacy account created and admin user registered',
+        userId: user.id
+      }
     })
 
     // Remove password from response
-    const { password: _, ...userWithoutPassword } = result.user
+    const { password: _, ...userWithoutPassword } = user
 
     return NextResponse.json(
       { 
         success: true, 
         message: 'Registration successful',
         data: {
-          pharmacyId: result.pharmacy.id,
+          pharmacyId: pharmacy.id,
           user: userWithoutPassword
         }
       },
