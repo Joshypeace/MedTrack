@@ -1,8 +1,46 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
+
+// Define types for the Prisma queries
+interface InventoryItemWhereInput {
+  OR?: Array<{
+    name?: { contains: string; mode: 'insensitive' }
+    category?: { contains: string; mode: 'insensitive' }
+  }>
+  category?: string
+}
+
+interface InventoryItemSelect {
+  id: boolean
+  name: boolean
+  batch: boolean
+  quantity: boolean
+  expiryDate: boolean
+  category: boolean
+  price: boolean
+}
+
+interface InventoryItemCreateInput {
+  name: string
+  batch?: string | null
+  category: string
+  quantity: number
+  price: number
+  expiryDate?: Date | null
+}
+
+interface TransformedInventoryItem {
+  id: string
+  name: string
+  batch: string
+  quantity: number
+  expiry: string
+  category: string
+  price: number
+  status: string
+}
 
 // GET all inventory items with optimized filtering
 export async function GET(request: Request) {
@@ -16,8 +54,7 @@ export async function GET(request: Request) {
   const category = searchParams.get('category') || 'all'
 
   try {
-  
-    const whereClause:Prisma.InventoryItemWhereInput = {}
+    const whereClause: InventoryItemWhereInput = {}
     
     if (searchTerm) {
       whereClause.OR = [
@@ -31,22 +68,24 @@ export async function GET(request: Request) {
     }
 
     // Select only needed fields to reduce data transfer
+    const selectFields: InventoryItemSelect = {
+      id: true,
+      name: true,
+      batch: true,
+      quantity: true,
+      expiryDate: true,
+      category: true,
+      price: true,
+    }
+
     const items = await prisma.inventoryItem.findMany({
       where: whereClause,
-      select: {
-        id: true,
-        name: true,
-        batch: true,
-        quantity: true,
-        expiryDate: true,
-        category: true,
-        price: true,
-      },
+      select: selectFields,
       orderBy: { createdAt: 'desc' },
     })
 
     // Transform data
-    const transformed = items.map((item) => ({
+    const transformed: TransformedInventoryItem[] = items.map((item) => ({
       id: item.id,
       name: item.name,
       batch: item.batch || item.id.slice(0, 6).toUpperCase(),
@@ -79,15 +118,17 @@ export async function POST(request: Request) {
   const body = await request.json()
 
   try {
+    const createData: InventoryItemCreateInput = {
+      name: body.name,
+      batch: body.batch || null,
+      category: body.category,
+      quantity: Number(body.quantity),
+      price: Number(body.price) || 0,
+      expiryDate: body.expiry ? new Date(body.expiry) : null,
+    }
+
     const newItem = await prisma.inventoryItem.create({
-      data: {
-        name: body.name,
-        batch: body.batch || null,
-        category: body.category,
-        quantity: Number(body.quantity),
-        price: Number(body.price) || 0,
-        expiryDate: body.expiry ? new Date(body.expiry) : null,
-      },
+      data: createData,
     })
 
     // Log activity with MWK
