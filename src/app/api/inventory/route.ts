@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
+import { prisma } from '@/lib/prisma'
 
 // GET all inventory items with optimized filtering
 export async function GET(request: Request) {
@@ -17,7 +17,7 @@ export async function GET(request: Request) {
 
   try {
   
-    const whereClause: Prisma.InventoryItemWhereInput = {}
+    const whereClause:Prisma.InventoryItemWhereInput = {}
     
     if (searchTerm) {
       whereClause.OR = [
