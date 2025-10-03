@@ -4,6 +4,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
+
+
 export async function GET() {
   const session = await getServerSession(authOptions)
 
@@ -100,7 +102,14 @@ export async function GET() {
       sales: 0
     }))
 
-    weeklySalesData.forEach(sale => {
+    type WeeklySale = {
+  createdAt: Date
+  _sum: {
+    totalPrice: number | null
+  }
+}
+
+    weeklySalesData.forEach((sale:WeeklySale ) => {
       const dayIndex = sale.createdAt.getDay()
       weeklySales[dayIndex].sales += sale._sum.totalPrice || 0
     })
