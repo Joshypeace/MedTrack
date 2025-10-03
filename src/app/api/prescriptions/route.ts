@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { prisma, Prisma } from '@/lib/prisma'
-import { PrescriptionStatus } from '@prisma/client'
+import { prisma, Prisma, PrescriptionStatus } from '@/lib/prisma'
 
 // GET all prescriptions with filtering
 export async function GET(request: Request) {
