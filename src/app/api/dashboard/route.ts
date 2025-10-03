@@ -7,6 +7,22 @@ import { prisma } from '@/lib/prisma'
 
 
 export async function GET() {
+
+  type WeeklySale = {
+  createdAt: Date
+  _sum: {
+    totalPrice: number | null
+  }
+}
+type StockDistributionItem = {
+  category: string
+  _sum: {
+    quantity: number | null
+  }
+}
+
+
+
   const session = await getServerSession(authOptions)
 
   if (!session?.user?.email) {
@@ -102,12 +118,7 @@ export async function GET() {
       sales: 0
     }))
 
-    type WeeklySale = {
-  createdAt: Date
-  _sum: {
-    totalPrice: number | null
-  }
-}
+    
 
     weeklySalesData.forEach((sale:WeeklySale ) => {
       const dayIndex = sale.createdAt.getDay()
@@ -122,7 +133,7 @@ export async function GET() {
       }
     })
 
-    const stockDistribution = stockDistributionData.map(item => ({
+    const stockDistribution = stockDistributionData.map((item: StockDistributionItem) => ({
       name: item.category,
       value: item._sum.quantity || 0,
       color: getCategoryColor(item.category)
