@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma, Prisma } from '@/lib/prisma'
+import { InventoryItem } from "@/types/index";
+
+
 
 // GET all inventory items with optimized filtering
 export async function GET(request: Request) {
@@ -45,7 +48,7 @@ export async function GET(request: Request) {
     })
 
     // Transform data
-    const transformed = items.map((item) => ({
+    const transformed = items.map((item: InventoryItem) => ({
       id: item.id,
       name: item.name,
       batch: item.batch || item.id.slice(0, 6).toUpperCase(),

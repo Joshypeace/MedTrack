@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
+import { TopDrugGroup } from '@/types/index'
 
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions)
@@ -73,7 +74,7 @@ export async function GET(request: Request) {
 
     // Get items details for top selling items
     const topItemsWithDetails = await Promise.all(
-      topSellingItems.map(async (item) => {
+      topSellingItems.map(async (item: TopDrugGroup) => {
         const itemDetails = await prisma.inventoryItem.findUnique({
           where: { id: item.itemId },
         })
