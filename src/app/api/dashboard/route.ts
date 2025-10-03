@@ -21,6 +21,14 @@ type StockDistributionItem = {
   }
 }
 
+type TopDrugGroup = {
+  itemId: string
+  _sum: {
+    quantity: number | null
+  }
+}
+
+
 
 
   const session = await getServerSession(authOptions)
@@ -163,7 +171,7 @@ type StockDistributionItem = {
 
     // Get item details for top drugs
     const topDrugsWithDetails = await Promise.all(
-      topDrugs.map(async sale => {
+      topDrugs.map(async (sale: TopDrugGroup) => {
         const item = await prisma.inventoryItem.findUnique({
           where: { id: sale.itemId }
         })
