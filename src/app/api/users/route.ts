@@ -67,7 +67,7 @@ export async function GET(request: Request) {
     })
 
     // Transform permissions to match frontend format
-    const transformedUsers = users.map(user => ({
+    const transformedUsers = users.map((user: { id: string; name: string; email: string; role: Role; status: string; lastLogin: Date | null; createdAt: Date; permissions: { module: PermissionModule; canView: boolean; canEdit: boolean; canDelete: boolean }[] }) => ({
       ...user,
       permissions: user.permissions
         .filter(p => p.canView || p.canEdit || p.canDelete)
