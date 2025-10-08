@@ -39,3 +39,4 @@ export type Expense = {
   category: string
   amount: number
 }
+

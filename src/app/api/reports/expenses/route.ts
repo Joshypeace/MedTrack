@@ -40,7 +40,7 @@ export async function GET(request: Request) {
       return acc
     }, {} as Record<string, number>)
 
-    const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0)
+    const totalExpenses = expenses.reduce((sum: number, expense: Expense) => sum + expense.amount, 0)
 
     return NextResponse.json({
       expenses,

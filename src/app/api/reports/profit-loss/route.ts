@@ -46,9 +46,9 @@ export async function GET(request: Request) {
     })
 
     // Calculate totals
-    const totalRevenue = sales.reduce((sum, sale) => sum + sale.totalPrice, 0)
-    const totalCOGS = sales.reduce((sum, sale) => sum + (sale.item.price * sale.quantity), 0)
-    const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0)
+    const totalRevenue = sales.reduce((sum: number, sale) => sum + sale.totalPrice, 0)
+    const totalCOGS = sales.reduce((sum: number, sale) => sum + (sale.item.price * sale.quantity), 0)
+    const totalExpenses = expenses.reduce((sum: number, expense: Expense) => sum + expense.amount, 0)
     const grossProfit = totalRevenue - totalCOGS
     const netProfit = grossProfit - totalExpenses
 
