@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma, Prisma } from '@/lib/prisma'
-import { TopDrugGroup } from '@/types/index'
+import { TopDrugGroup, Sale } from '@/types/index'
 
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions)
@@ -36,8 +36,8 @@ export async function GET(request: Request) {
       orderBy: { createdAt: 'desc' },
     })
 
-    // Get total revenue
-    const totalRevenue = sales.reduce((sum, sale) => sum + sale.totalPrice, 0)
+    // Get total revenue`
+    const totalRevenue = sales.reduce((sum: number, sale: Sale) => sum + sale.totalPrice, 0)
 
     // Get sales by month
     const salesByMonth = await prisma.sale.groupBy({
@@ -114,7 +114,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       totalRevenue,
-      totalItemsSold: sales.reduce((sum, sale) => sum + sale.quantity, 0),
+      totalItemsSold: sales.reduce((sum: number, sale: Sale) => sum + sale.quantity, 0),
       totalTransactions: sales.length,
       salesByMonth: salesByMonth.map(sale => ({
         month: sale.createdAt.toLocaleString('default', { month: 'short' }),
