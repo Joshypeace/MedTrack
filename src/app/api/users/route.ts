@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { prisma, Prisma } from '@/lib/prisma'
+import { prisma, Prisma, Role, PermissionModule } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
-import {  Role, PermissionModule } from '@prisma/client'
 
 // Define types for permissions
 interface PermissionAccess {
