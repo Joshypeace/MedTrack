@@ -100,7 +100,7 @@ export async function GET(request: Request) {
 
     // Get staff details
     const staffWithDetails = await Promise.all(
-      staffPerformance.map(async (staff) => {
+      staffPerformance.map(async (staff: { userId: string; _sum: { totalPrice: number | null; quantity: number | null }; _count: { id: number } }) => {
         const staffDetails = await prisma.user.findUnique({
           where: { id: staff.userId },
         })
