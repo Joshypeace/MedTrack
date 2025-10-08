@@ -40,3 +40,15 @@ export type Expense = {
   amount: number
 }
 
+export type Sale = {
+  id: string;
+  createdAt: Date;
+  userId: string;
+  itemId: string;
+  item: InventoryItem;
+    quantity: number;
+    totalPrice: number;
+    prescriptionId: string | null;
+
+}
+

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma, Prisma } from '@/lib/prisma'
-import { Expense } from '@/types/index'
+import { Expense, Sale } from '@/types/index'
 
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions)
@@ -46,8 +46,8 @@ export async function GET(request: Request) {
     })
 
     // Calculate totals
-    const totalRevenue = sales.reduce((sum: number, sale) => sum + sale.totalPrice, 0)
-    const totalCOGS = sales.reduce((sum: number, sale) => sum + (sale.item.price * sale.quantity), 0)
+    const totalRevenue = sales.reduce((sum: number, sale: Sale) => sum + sale.totalPrice, 0)
+    const totalCOGS = sales.reduce((sum: number, sale: Sale) => sum + (sale.item.price * sale.quantity), 0)
     const totalExpenses = expenses.reduce((sum: number, expense: Expense) => sum + expense.amount, 0)
     const grossProfit = totalRevenue - totalCOGS
     const netProfit = grossProfit - totalExpenses

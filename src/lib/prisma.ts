@@ -1,5 +1,5 @@
 
-import { Prisma, PrismaClient, PrescriptionStatus } from '@prisma/client'
+import { Prisma, PrismaClient, PrescriptionStatus, Sale } from '@prisma/client'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
