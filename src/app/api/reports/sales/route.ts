@@ -116,7 +116,7 @@ export async function GET(request: Request) {
       totalRevenue,
       totalItemsSold: sales.reduce((sum: number, sale: Sale) => sum + sale.quantity, 0),
       totalTransactions: sales.length,
-      salesByMonth: salesByMonth.map(sale => ({
+      salesByMonth: salesByMonth.map((sale: { createdAt: Date; _sum: { totalPrice: number | null; quantity: number | null } }) => ({
         month: sale.createdAt.toLocaleString('default', { month: 'short' }),
         revenue: sale._sum.totalPrice || 0,
         items: sale._sum.quantity || 0,
