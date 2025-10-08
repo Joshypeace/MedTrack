@@ -31,7 +31,7 @@ export async function GET(request: Request) {
     })
 
     // Group expenses by category
-    const expensesByCategory = expenses.reduce((acc, expense) => {
+    const expensesByCategory = expenses.reduce((acc: Record<string, number>, expense) => {
       if (!acc[expense.category]) {
         acc[expense.category] = 0
       }
