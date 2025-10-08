@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma, Prisma } from '@/lib/prisma'
+import { Expense } from '@/types/index'
 
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions)
@@ -52,7 +53,7 @@ export async function GET(request: Request) {
     const netProfit = grossProfit - totalExpenses
 
     // Group expenses by category
-    const expensesByCategory = expenses.reduce((acc, expense) => {
+    const expensesByCategory = expenses.reduce((acc: Record<string, number>, expense: Expense) => {
       if (!acc[expense.category]) {
         acc[expense.category] = 0
       }

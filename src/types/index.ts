@@ -34,3 +34,8 @@ export type TopDrugGroup = {
   expiryDate: Date | null
   category: string
 }
+
+export type Expense = {
+  category: string
+  amount: number
+}
