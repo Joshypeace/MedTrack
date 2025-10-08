@@ -1,5 +1,5 @@
 
-import { PrismaClient, Prisma, PrescriptionStatus, PermissionModule, Role } from '@prisma/client'
+import { Role, PrismaClient, Prisma, PrescriptionStatus, PermissionModule  } from '@prisma/client'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
