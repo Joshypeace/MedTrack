@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma, Prisma } from '@/lib/prisma'
 import { Expense, Sale } from '@/types/index'
+import { InventoryItem } from '@prisma/client'
 
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions)
@@ -64,8 +65,8 @@ export async function GET(request: Request) {
     return NextResponse.json({
       revenue: {
         totalSales: totalRevenue,
-        prescriptionSales: sales.filter(s => s.prescriptionId).reduce((sum, sale) => sum + sale.totalPrice, 0),
-        otcSales: sales.filter(s => !s.prescriptionId).reduce((sum, sale) => sum + sale.totalPrice, 0),
+        prescriptionSales: sales.filter((s: Sale) => s.prescriptionId).reduce((sum, sale) => sum + sale.totalPrice, 0),
+        otcSales: sales.filter((s: Sale) => !s.prescriptionId).reduce((sum, sale) => sum + sale.totalPrice, 0),
       },
       costOfGoodsSold: {
         medicationCosts: totalCOGS,
