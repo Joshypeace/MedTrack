@@ -20,8 +20,8 @@ export type StockDistributionItem = {
 export type TopDrugGroup = {
   itemId: string;
   _sum: {
-    quantity: number | null;
-    totalPrice: number | null
+    quantity?: number | null;
+    totalPrice?: number | null
   };
 };
 
