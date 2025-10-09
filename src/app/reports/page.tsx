@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Download, TrendingUp, DollarSign, Package, Users, PieChart, FileText } from "lucide-react"
+import { Download, TrendingUp, DollarSign, Package, Users, PieChart, FileText, Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -87,6 +87,7 @@ export default function ReportsPage() {
     itemsSold: 0,
     transactions: 0,
   })
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
 
   const fetchReports = useCallback(async () => {
     try {
@@ -191,6 +192,15 @@ export default function ReportsPage() {
 
   const formatCurrency = (amount: number) => {
     return `MK${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  }
+
+  const formatCurrencyCompact = (amount: number) => {
+    if (amount >= 1000000) {
+      return `MK${(amount / 1000000).toFixed(1)}M`
+    } else if (amount >= 1000) {
+      return `MK${(amount / 1000).toFixed(1)}K`
+    }
+    return `MK${amount}`
   }
 
   const exportToCSV = () => {
@@ -353,7 +363,7 @@ export default function ReportsPage() {
         <Sidebar />
         <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
           <Header />
-          <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
+          <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6">
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
@@ -371,27 +381,40 @@ export default function ReportsPage() {
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
         <Header />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6">
+          {/* Mobile Sidebar Toggle */}
+          <div className="lg:hidden mb-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+              className="flex items-center gap-2 bg-white"
+            >
+              {isMobileSidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+              Menu
+            </Button>
+          </div>
+
           {/* Page Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">Reports & Analytics</h1>
-            <p className="text-slate-600">Generate detailed reports and analyze pharmacy performance</p>
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">Reports & Analytics</h1>
+            <p className="text-slate-600 text-sm sm:text-base">Generate detailed reports and analyze pharmacy performance</p>
           </div>
 
           {/* Report Filters */}
-          <Card className="card-enhanced mb-8">
-            <CardHeader>
-              <CardTitle>Report Filters</CardTitle>
-              <CardDescription>
+          <Card className="card-enhanced mb-6 sm:mb-8">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg sm:text-xl">Report Filters</CardTitle>
+              <CardDescription className="text-sm sm:text-base">
                 {`Select a date range for your reports. Choose "Custom Range" to specify exact start and end dates.`}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="date-range">Date Range</Label>
+                  <Label htmlFor="date-range" className="text-sm">Date Range</Label>
                   <Select value={dateRange} onValueChange={setDateRange}>
-                    <SelectTrigger>
+                    <SelectTrigger className="text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -405,58 +428,60 @@ export default function ReportsPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="start-date">Start Date</Label>
+                  <Label htmlFor="start-date" className="text-sm">Start Date</Label>
                   <Input 
                     type="date" 
                     id="start-date" 
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
                     disabled={dateRange !== 'custom'}
-                    className={dateRange !== 'custom' ? "opacity-50 cursor-not-allowed" : ""}
+                    className={`text-sm ${dateRange !== 'custom' ? "opacity-50 cursor-not-allowed" : ""}`}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="end-date">End Date</Label>
+                  <Label htmlFor="end-date" className="text-sm">End Date</Label>
                   <Input 
                     type="date" 
                     id="end-date" 
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
                     disabled={dateRange !== 'custom'}
-                    className={dateRange !== 'custom' ? "opacity-50 cursor-not-allowed" : ""}
+                    className={`text-sm ${dateRange !== 'custom' ? "opacity-50 cursor-not-allowed" : ""}`}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="generate">&nbsp;</Label>
-                  <Button onClick={fetchReports} className="w-full button-primary">
+                <div className="space-y-2 flex flex-col justify-end">
+                  <Button onClick={fetchReports} className="w-full button-primary text-sm py-2.5">
                     Generate Report
                   </Button>
                 </div>
               </div>
-              <div className="flex gap-2 mt-4">
+              <div className="flex flex-wrap gap-2 mt-4">
                 <Button 
                   variant="outline" 
-                  className="bg-transparent"
+                  size="sm"
+                  className="bg-transparent text-xs sm:text-sm"
                   onClick={exportToCSV}
                 >
-                  <Download className="mr-2 h-4 w-4" />
+                  <Download className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                   Export CSV
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="bg-transparent"
+                  size="sm"
+                  className="bg-transparent text-xs sm:text-sm"
                   onClick={exportToPDF}
                 >
-                  <Download className="mr-2 h-4 w-4" />
+                  <Download className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                   Export PDF
                 </Button>
                 {profitLossData && (
                   <Button 
                     variant="outline" 
-                    className="bg-transparent"
+                    size="sm"
+                    className="bg-transparent text-xs sm:text-sm"
                     onClick={exportProfitLossToPDF}
                   >
-                    <Download className="mr-2 h-4 w-4" />
+                    <Download className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                     P&L Statement
                   </Button>
                 )}
@@ -465,26 +490,28 @@ export default function ReportsPage() {
           </Card>
 
           {/* Comprehensive Tabs for Different Report Types */}
-          <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:grid-cols-4">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="profit-loss">Profit & Loss</TabsTrigger>
-              <TabsTrigger value="sales">Sales Analysis</TabsTrigger>
-              <TabsTrigger value="performance">Performance</TabsTrigger>
+          <Tabs defaultValue="overview" className="space-y-4 sm:space-y-6">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:w-auto lg:grid-cols-4 h-auto">
+              <TabsTrigger value="overview" className="text-xs sm:text-sm py-2">Overview</TabsTrigger>
+              <TabsTrigger value="profit-loss" className="text-xs sm:text-sm py-2">Profit & Loss</TabsTrigger>
+              <TabsTrigger value="sales" className="text-xs sm:text-sm py-2">Sales Analysis</TabsTrigger>
+              <TabsTrigger value="performance" className="text-xs sm:text-sm py-2">Performance</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="overview" className="space-y-6">
+            <TabsContent value="overview" className="space-y-4 sm:space-y-6">
               {/* Summary Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <Card className="card-enhanced">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-                    <DollarSign className="h-4 w-4 text-slate-600" />
+                    <CardTitle className="text-xs sm:text-sm font-medium">Total Revenue</CardTitle>
+                    <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-slate-600" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-slate-900">{formatCurrency(summaryStats.totalRevenue)}</div>
-                    <p className="text-xs text-slate-600">
-                      <TrendingUp className="inline h-3 w-3 mr-1 text-emerald-500" />
+                    <div className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-900">
+                      {formatCurrencyCompact(summaryStats.totalRevenue)}
+                    </div>
+                    <p className="text-xs text-slate-600 mt-1">
+                      <TrendingUp className="inline h-2 w-2 sm:h-3 sm:w-3 mr-1 text-emerald-500" />
                       Total revenue
                     </p>
                   </CardContent>
@@ -492,12 +519,14 @@ export default function ReportsPage() {
 
                 <Card className="card-enhanced">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
-                    <PieChart className="h-4 w-4 text-slate-600" />
+                    <CardTitle className="text-xs sm:text-sm font-medium">Net Profit</CardTitle>
+                    <PieChart className="h-3 w-3 sm:h-4 sm:w-4 text-slate-600" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-emerald-600">{formatCurrency(summaryStats.netProfit)}</div>
-                    <p className="text-xs text-slate-600">
+                    <div className="text-lg sm:text-xl lg:text-2xl font-bold text-emerald-600">
+                      {formatCurrencyCompact(summaryStats.netProfit)}
+                    </div>
+                    <p className="text-xs text-slate-600 mt-1">
                       {profitLossData?.calculations.netMargin.toFixed(1)}% profit margin
                     </p>
                   </CardContent>
@@ -505,220 +534,256 @@ export default function ReportsPage() {
 
                 <Card className="card-enhanced">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Items Sold</CardTitle>
-                    <Package className="h-4 w-4 text-slate-600" />
+                    <CardTitle className="text-xs sm:text-sm font-medium">Items Sold</CardTitle>
+                    <Package className="h-3 w-3 sm:h-4 sm:w-4 text-slate-600" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-slate-900">{summaryStats.itemsSold.toLocaleString()}</div>
-                    <p className="text-xs text-slate-600">Total items sold</p>
+                    <div className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-900">
+                      {summaryStats.itemsSold.toLocaleString()}
+                    </div>
+                    <p className="text-xs text-slate-600 mt-1">Total items sold</p>
                   </CardContent>
                 </Card>
 
                 <Card className="card-enhanced">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Transactions</CardTitle>
-                    <Users className="h-4 w-4 text-slate-600" />
+                    <CardTitle className="text-xs sm:text-sm font-medium">Transactions</CardTitle>
+                    <Users className="h-3 w-3 sm:h-4 sm:w-4 text-slate-600" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-slate-900">{summaryStats.transactions.toLocaleString()}</div>
-                    <p className="text-xs text-slate-600">Total transactions</p>
+                    <div className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-900">
+                      {summaryStats.transactions.toLocaleString()}
+                    </div>
+                    <p className="text-xs text-slate-600 mt-1">Total transactions</p>
                   </CardContent>
                 </Card>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 {/* Revenue Chart */}
                 <Card className="card-enhanced">
-                  <CardHeader>
-                    <CardTitle>Monthly Revenue Trend</CardTitle>
-                    <CardDescription>Revenue and items sold over time</CardDescription>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base sm:text-lg">Monthly Revenue Trend</CardTitle>
+                    <CardDescription className="text-sm">Revenue and items sold over time</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <LineChart data={salesData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" />
-                        <YAxis />
-                        <Tooltip formatter={(value) => [`MK${value}`, 'Revenue']} />
-                        <Legend />
-                        <Line type="monotone" dataKey="revenue" stroke="#10B981" strokeWidth={2} name="Revenue (MK)" />
-                        <Line type="monotone" dataKey="items" stroke="#3B82F6" strokeWidth={2} name="Items Sold" />
-                      </LineChart>
-                    </ResponsiveContainer>
+                    <div className="h-64 sm:h-80">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={salesData}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="month" fontSize={12} />
+                          <YAxis fontSize={12} />
+                          <Tooltip 
+                            formatter={(value) => [`MK${value}`, 'Revenue']}
+                            labelStyle={{ fontSize: 12 }}
+                          />
+                          <Legend wrapperStyle={{ fontSize: 12 }} />
+                          <Line 
+                            type="monotone" 
+                            dataKey="revenue" 
+                            stroke="#10B981" 
+                            strokeWidth={2} 
+                            name="Revenue (MK)" 
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="items" 
+                            stroke="#3B82F6" 
+                            strokeWidth={2} 
+                            name="Items Sold" 
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
                   </CardContent>
                 </Card>
 
                 {/* Top Selling Items */}
                 <Card className="card-enhanced">
-                  <CardHeader>
-                    <CardTitle>Top Selling Items</CardTitle>
-                    <CardDescription>Best performing medications this period</CardDescription>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base sm:text-lg">Top Selling Items</CardTitle>
+                    <CardDescription className="text-sm">Best performing medications this period</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={topSellingItems} layout="horizontal">
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis type="number" />
-                        <YAxis dataKey="name" type="category" width={120} />
-                        <Tooltip formatter={(value) => [value, 'Quantity']} />
-                        <Bar dataKey="quantity" fill="#10B981" radius={[0, 4, 4, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
+                    <div className="h-64 sm:h-80">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={topSellingItems} layout="horizontal">
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis type="number" fontSize={12} />
+                          <YAxis 
+                            dataKey="name" 
+                            type="category" 
+                            width={80}
+                            fontSize={10}
+                            tick={{ fontSize: 10 }}
+                          />
+                          <Tooltip 
+                            formatter={(value) => [value, 'Quantity']}
+                            labelStyle={{ fontSize: 12 }}
+                          />
+                          <Bar dataKey="quantity" fill="#10B981" radius={[0, 4, 4, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
             </TabsContent>
 
             {/* Profit & Loss Tab */}
-            <TabsContent value="profit-loss" className="space-y-6">
+            <TabsContent value="profit-loss" className="space-y-4 sm:space-y-6">
               {profitLossData && (
                 <>
-                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-bold">Profit & Loss Statement</h2>
-                    <Button onClick={exportProfitLossToPDF} variant="outline">
-                      <Download className="mr-2 h-4 w-4" />
-                      Download P&L Statement
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 sm:mb-6">
+                    <h2 className="text-xl sm:text-2xl font-bold">Profit & Loss Statement</h2>
+                    <Button onClick={exportProfitLossToPDF} variant="outline" size="sm" className="text-xs sm:text-sm">
+                      <Download className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                      Download P&L
                     </Button>
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                     <Card className="card-enhanced">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <FileText className="h-5 w-5 text-emerald-600" />
+                      <CardHeader className="pb-3">
+                        <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                          <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600" />
                           Gross Profit
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <div className="text-3xl font-bold text-emerald-600 mb-2">
-                          {formatCurrency(profitLossData.calculations.grossProfit)}
+                        <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-emerald-600 mb-2">
+                          {formatCurrencyCompact(profitLossData.calculations.grossProfit)}
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                          <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs">
                             {profitLossData.calculations.grossMargin.toFixed(1)}% margin
                           </Badge>
                         </div>
-                        <p className="text-sm text-slate-600 mt-2">Revenue minus cost of goods sold</p>
+                        <p className="text-xs text-slate-600 mt-2">Revenue minus cost of goods sold</p>
                       </CardContent>
                     </Card>
 
                     <Card className="card-enhanced">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <DollarSign className="h-5 w-5 text-blue-600" />
+                      <CardHeader className="pb-3">
+                        <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                          <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
                           Net Profit
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <div className="text-3xl font-bold text-blue-600 mb-2">
-                          {formatCurrency(profitLossData.calculations.netProfit)}
+                        <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-blue-600 mb-2">
+                          {formatCurrencyCompact(profitLossData.calculations.netProfit)}
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
                             {profitLossData.calculations.netMargin.toFixed(1)}% margin
                           </Badge>
                         </div>
-                        <p className="text-sm text-slate-600 mt-2">After all expenses</p>
+                        <p className="text-xs text-slate-600 mt-2">After all expenses</p>
                       </CardContent>
                     </Card>
 
                     <Card className="card-enhanced">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <TrendingUp className="h-5 w-5 text-purple-600" />
+                      <CardHeader className="pb-3">
+                        <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                          <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
                           Operating Expenses
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <div className="text-3xl font-bold text-purple-600 mb-2">
-                          {formatCurrency(profitLossData.operatingExpenses.totalOperatingExpenses)}
+                        <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-purple-600 mb-2">
+                          {formatCurrencyCompact(profitLossData.operatingExpenses.totalOperatingExpenses)}
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-xs">
                             {((profitLossData.operatingExpenses.totalOperatingExpenses / profitLossData.revenue.totalSales) * 100).toFixed(1)}% of revenue
                           </Badge>
                         </div>
-                        <p className="text-sm text-slate-600 mt-2">Total operational costs</p>
+                        <p className="text-xs text-slate-600 mt-2">Total operational costs</p>
                       </CardContent>
                     </Card>
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                     {/* Detailed P&L Statement */}
                     <Card className="card-enhanced">
-                      <CardHeader>
-                        <CardTitle>Profit & Loss Statement</CardTitle>
-                        <CardDescription>Detailed financial breakdown for the selected period</CardDescription>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base sm:text-lg">Profit & Loss Statement</CardTitle>
+                        <CardDescription className="text-sm">Detailed financial breakdown for the selected period</CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <div className="space-y-4">
+                        <div className="space-y-4 text-sm">
                           {/* Revenue Section */}
-                          <div className="border-b pb-4">
-                            <h4 className="font-semibold text-slate-900 mb-3">Revenue</h4>
-                            <div className="space-y-2 text-sm">
+                          <div className="border-b pb-3">
+                            <h4 className="font-semibold text-slate-900 mb-2 text-sm sm:text-base">Revenue</h4>
+                            <div className="space-y-1">
                               <div className="flex justify-between">
-                                <span className="text-slate-600">Prescription Sales</span>
-                                <span className="font-medium">
-                                  {formatCurrency(profitLossData.revenue.prescriptionSales)}
+                                <span className="text-slate-600 text-xs sm:text-sm">Prescription Sales</span>
+                                <span className="font-medium text-xs sm:text-sm">
+                                  {formatCurrencyCompact(profitLossData.revenue.prescriptionSales)}
                                 </span>
                               </div>
                               <div className="flex justify-between">
-                                <span className="text-slate-600">OTC Sales</span>
-                                <span className="font-medium">{formatCurrency(profitLossData.revenue.otcSales)}</span>
+                                <span className="text-slate-600 text-xs sm:text-sm">OTC Sales</span>
+                                <span className="font-medium text-xs sm:text-sm">
+                                  {formatCurrencyCompact(profitLossData.revenue.otcSales)}
+                                </span>
                               </div>
-                              <div className="flex justify-between font-semibold text-emerald-600 pt-2 border-t">
+                              <div className="flex justify-between font-semibold text-emerald-600 pt-2 border-t text-sm">
                                 <span>Total Revenue</span>
-                                <span>{formatCurrency(profitLossData.revenue.totalSales)}</span>
+                                <span>{formatCurrencyCompact(profitLossData.revenue.totalSales)}</span>
                               </div>
                             </div>
                           </div>
 
                           {/* COGS Section */}
-                          <div className="border-b pb-4">
-                            <h4 className="font-semibold text-slate-900 mb-3">Cost of Goods Sold</h4>
-                            <div className="space-y-2 text-sm">
+                          <div className="border-b pb-3">
+                            <h4 className="font-semibold text-slate-900 mb-2 text-sm sm:text-base">Cost of Goods Sold</h4>
+                            <div className="space-y-1">
                               <div className="flex justify-between">
-                                <span className="text-slate-600">Medication Costs</span>
-                                <span className="font-medium">
-                                  {formatCurrency(profitLossData.costOfGoodsSold.medicationCosts)}
+                                <span className="text-slate-600 text-xs sm:text-sm">Medication Costs</span>
+                                <span className="font-medium text-xs sm:text-sm">
+                                  {formatCurrencyCompact(profitLossData.costOfGoodsSold.medicationCosts)}
                                 </span>
                               </div>
-                              <div className="flex justify-between font-semibold text-red-600 pt-2 border-t">
+                              <div className="flex justify-between font-semibold text-red-600 pt-2 border-t text-sm">
                                 <span>Total COGS</span>
-                                <span>{formatCurrency(profitLossData.costOfGoodsSold.totalCOGS)}</span>
+                                <span>{formatCurrencyCompact(profitLossData.costOfGoodsSold.totalCOGS)}</span>
                               </div>
                             </div>
                           </div>
 
                           {/* Gross Profit */}
-                          <div className="border-b pb-4">
-                            <div className="flex justify-between font-bold text-emerald-600 text-lg">
+                          <div className="border-b pb-3">
+                            <div className="flex justify-between font-bold text-emerald-600 text-base">
                               <span>Gross Profit</span>
-                              <span>{formatCurrency(profitLossData.calculations.grossProfit)}</span>
+                              <span>{formatCurrencyCompact(profitLossData.calculations.grossProfit)}</span>
                             </div>
                           </div>
 
                           {/* Operating Expenses */}
-                          <div className="border-b pb-4">
-                            <h4 className="font-semibold text-slate-900 mb-3">Operating Expenses</h4>
-                            <div className="space-y-2 text-sm">
+                          <div className="border-b pb-3">
+                            <h4 className="font-semibold text-slate-900 mb-2 text-sm sm:text-base">Operating Expenses</h4>
+                            <div className="space-y-1">
                               {Object.entries(profitLossData.operatingExpenses.byCategory).map(([category, amount]) => (
                                 <div key={category} className="flex justify-between">
-                                  <span className="text-slate-600">{category}</span>
-                                  <span className="font-medium">{formatCurrency(amount)}</span>
+                                  <span className="text-slate-600 text-xs sm:text-sm">{category}</span>
+                                  <span className="font-medium text-xs sm:text-sm">
+                                    {formatCurrencyCompact(amount)}
+                                  </span>
                                 </div>
                               ))}
-                              <div className="flex justify-between font-semibold text-red-600 pt-2 border-t">
+                              <div className="flex justify-between font-semibold text-red-600 pt-2 border-t text-sm">
                                 <span>Total Operating Expenses</span>
-                                <span>{formatCurrency(profitLossData.operatingExpenses.totalOperatingExpenses)}</span>
+                                <span>{formatCurrencyCompact(profitLossData.operatingExpenses.totalOperatingExpenses)}</span>
                               </div>
                             </div>
                           </div>
 
                           {/* Net Profit */}
-                          <div className="flex justify-between font-bold text-blue-600 text-xl">
+                          <div className="flex justify-between font-bold text-blue-600 text-lg">
                             <span>Net Profit</span>
-                            <span>{formatCurrency(profitLossData.calculations.netProfit)}</span>
+                            <span>{formatCurrencyCompact(profitLossData.calculations.netProfit)}</span>
                           </div>
                         </div>
                       </CardContent>
@@ -726,35 +791,38 @@ export default function ReportsPage() {
 
                     {/* Expense Breakdown Chart */}
                     <Card className="card-enhanced">
-                      <CardHeader>
-                        <CardTitle>Expense Breakdown</CardTitle>
-                        <CardDescription>Operating expenses by category</CardDescription>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base sm:text-lg">Expense Breakdown</CardTitle>
+                        <CardDescription className="text-sm">Operating expenses by category</CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <ResponsiveContainer width="100%" height={400}>
-                          <RechartsPieChart>
-                            <Pie
-                              data={expenseBreakdown}
-                              cx="50%"
-                              cy="50%"
-                              outerRadius={100}
-                              fill="#8884d8"
-                              dataKey="value"
-                              labelLine={false}
-                            >
-                              {expenseBreakdown.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.color} />
-                              ))}
-                            </Pie>
-                            <Tooltip 
-                              formatter={(value: number) => [
-                                formatCurrency(value), 
-                                'Amount'
-                              ]} 
-                            />
-                            <Legend />
-                          </RechartsPieChart>
-                        </ResponsiveContainer>
+                        <div className="h-64 sm:h-80">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <RechartsPieChart>
+                              <Pie
+                                data={expenseBreakdown}
+                                cx="50%"
+                                cy="50%"
+                                outerRadius={80}
+                                fill="#8884d8"
+                                dataKey="value"
+                                labelLine={false}
+                                label={({ name, percent }) => `${name} ${((percent as number) * 100).toFixed(0)}%`}
+                              >
+                                {expenseBreakdown.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={entry.color} />
+                                ))}
+                              </Pie>
+                              <Tooltip 
+                                formatter={(value: number) => [
+                                  formatCurrency(value), 
+                                  'Amount'
+                                ]} 
+                              />
+                              <Legend wrapperStyle={{ fontSize: 12 }} />
+                            </RechartsPieChart>
+                          </ResponsiveContainer>
+                        </div>
                       </CardContent>
                     </Card>
                   </div>
@@ -762,36 +830,40 @@ export default function ReportsPage() {
               )}
             </TabsContent>
 
-            <TabsContent value="sales" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <TabsContent value="sales" className="space-y-4 sm:space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 {/* Top Selling Items Table */}
                 <Card className="card-enhanced">
-                  <CardHeader>
-                    <CardTitle>Detailed Sales Report</CardTitle>
-                    <CardDescription>Top performing medications with revenue details</CardDescription>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base sm:text-lg">Detailed Sales Report</CardTitle>
+                    <CardDescription className="text-sm">Top performing medications with revenue details</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="rounded-md border overflow-x-auto">
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Medicine</TableHead>
-                            <TableHead className="text-right">Quantity</TableHead>
-                            <TableHead className="text-right">Revenue</TableHead>
+                            <TableHead className="text-xs sm:text-sm">Medicine</TableHead>
+                            <TableHead className="text-right text-xs sm:text-sm">Quantity</TableHead>
+                            <TableHead className="text-right text-xs sm:text-sm">Revenue</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {topSellingItems.length > 0 ? (
                             topSellingItems.map((item, index) => (
                               <TableRow key={index}>
-                                <TableCell className="font-medium">{item.name}</TableCell>
-                                <TableCell className="text-right">{item.quantity.toLocaleString()}</TableCell>
-                                <TableCell className="text-right">{formatCurrency(item.revenue)}</TableCell>
+                                <TableCell className="font-medium text-xs sm:text-sm max-w-[120px] truncate">
+                                  {item.name}
+                                </TableCell>
+                                <TableCell className="text-right text-xs sm:text-sm">{item.quantity.toLocaleString()}</TableCell>
+                                <TableCell className="text-right text-xs sm:text-sm">
+                                  {formatCurrencyCompact(item.revenue)}
+                                </TableCell>
                               </TableRow>
                             ))
                           ) : (
                             <TableRow>
-                              <TableCell colSpan={3} className="text-center text-muted-foreground py-4">
+                              <TableCell colSpan={3} className="text-center text-muted-foreground py-4 text-sm">
                                 No sales data available
                               </TableCell>
                             </TableRow>
@@ -804,32 +876,36 @@ export default function ReportsPage() {
 
                 {/* Staff Performance */}
                 <Card className="card-enhanced">
-                  <CardHeader>
-                    <CardTitle>Staff Performance</CardTitle>
-                    <CardDescription>Sales performance by staff member</CardDescription>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base sm:text-lg">Staff Performance</CardTitle>
+                    <CardDescription className="text-sm">Sales performance by staff member</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="rounded-md border overflow-x-auto">
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Staff Member</TableHead>
-                            <TableHead className="text-right">Sales</TableHead>
-                            <TableHead className="text-right">Revenue</TableHead>
+                            <TableHead className="text-xs sm:text-sm">Staff Member</TableHead>
+                            <TableHead className="text-right text-xs sm:text-sm">Sales</TableHead>
+                            <TableHead className="text-right text-xs sm:text-sm">Revenue</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {staffPerformance.length > 0 ? (
                             staffPerformance.map((staff, index) => (
                               <TableRow key={index}>
-                                <TableCell className="font-medium">{staff.name}</TableCell>
-                                <TableCell className="text-right">{staff.sales}</TableCell>
-                                <TableCell className="text-right">{formatCurrency(staff.revenue)}</TableCell>
+                                <TableCell className="font-medium text-xs sm:text-sm max-w-[120px] truncate">
+                                  {staff.name}
+                                </TableCell>
+                                <TableCell className="text-right text-xs sm:text-sm">{staff.sales}</TableCell>
+                                <TableCell className="text-right text-xs sm:text-sm">
+                                  {formatCurrencyCompact(staff.revenue)}
+                                </TableCell>
                               </TableRow>
                             ))
                           ) : (
                             <TableRow>
-                              <TableCell colSpan={3} className="text-center text-muted-foreground py-4">
+                              <TableCell colSpan={3} className="text-center text-muted-foreground py-4 text-sm">
                                 No staff performance data available
                               </TableCell>
                             </TableRow>
@@ -842,17 +918,17 @@ export default function ReportsPage() {
               </div>
             </TabsContent>
 
-            <TabsContent value="performance" className="space-y-6">
+            <TabsContent value="performance" className="space-y-4 sm:space-y-6">
               <Card className="card-enhanced">
-                <CardHeader>
-                  <CardTitle>Performance Metrics</CardTitle>
-                  <CardDescription>Key performance indicators and analytics</CardDescription>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base sm:text-lg">Performance Metrics</CardTitle>
+                  <CardDescription className="text-sm">Key performance indicators and analytics</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-center text-muted-foreground py-8">
-                    <FileText className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-                    <p>Performance analytics coming soon</p>
-                    <p className="text-sm">Additional metrics and insights will be available here</p>
+                  <div className="text-center text-muted-foreground py-6 sm:py-8">
+                    <FileText className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 text-slate-300" />
+                    <p className="text-sm sm:text-base">Performance analytics coming soon</p>
+                    <p className="text-xs sm:text-sm mt-1">Additional metrics and insights will be available here</p>
                   </div>
                 </CardContent>
               </Card>
