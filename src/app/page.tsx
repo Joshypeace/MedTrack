@@ -11,8 +11,6 @@ import {
   CheckCircle,
   Baseline as ChartLine,
   Smartphone,
-  CreditCard,
-  Clock,
   Menu,
   X,
 } from "lucide-react"
@@ -140,34 +138,28 @@ export default function LandingPage() {
                 Features
               </a>
               <a
-                href="#pricing"
-                className="text-slate-600 hover:text-emerald-600 transition-colors duration-300 font-medium"
-              >
-                Pricing
-              </a>
-              <a
                 href="#about"
                 className="text-slate-600 hover:text-emerald-600 transition-colors duration-300 font-medium"
               >
                 About
               </a>
               <Link href="/login">
-                <Button variant="ghost" className="text-slate-600 hover:text-slate-900 transition-colors duration-300">
+                {/* <Button variant="ghost" className="text-slate-600 hover:text-slate-900 transition-colors duration-300">
                   Sign In
-                </Button>
+                </Button> */}
               </Link>
-              <Link href="/register">
+              <Link href="/login">
                 <Button className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg shadow-emerald-200/50 rounded-xl transform hover:scale-105 transition-all duration-300">
-                  Start Free Trial
+                 Sign In
                 </Button>
               </Link>
             </div>
 
             {/* Mobile Menu Button */}
             <div className="md:hidden flex items-center space-x-2">
-              <Link href="/register">
+              <Link href="/login">
                 <Button className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg shadow-emerald-200/50 rounded-xl transform hover:scale-105 transition-all duration-300 text-sm px-3">
-                  Start Trial
+                  Sign In
                 </Button>
               </Link>
               <Button
@@ -196,13 +188,6 @@ export default function LandingPage() {
                 Features
               </a>
               <a
-                href="#pricing"
-                className="text-slate-600 hover:text-emerald-600 transition-colors duration-300 font-medium py-2"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Pricing
-              </a>
-              <a
                 href="#about"
                 className="text-slate-600 hover:text-emerald-600 transition-colors duration-300 font-medium py-2"
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -210,13 +195,13 @@ export default function LandingPage() {
                 About
               </a>
               <Link href="/login" className="w-full">
-                <Button
+                {/* <Button
                   variant="outline"
                   className="w-full justify-start text-slate-600 hover:text-slate-900 transition-colors duration-300 border-slate-300"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Sign In
-                </Button>
+                </Button> */}
               </Link>
             </div>
           </div>
@@ -244,34 +229,13 @@ export default function LandingPage() {
                 Streamline your pharmaceutical operations with our comprehensive inventory management solution. Track
                 stock, manage sales, and get real-time insights - all in one place.
               </p>
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 md:p-6 mb-6 md:mb-8 border border-emerald-100 shadow-lg">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="bg-gradient-to-br from-emerald-100 to-teal-100 p-2 rounded-lg">
-                      <Clock className="h-5 w-5 text-emerald-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-slate-800">10-Day Free Trial</h3>
-                      <p className="text-sm text-slate-600">No credit card required</p>
-                    </div>
-                  </div>
-                  <div className="text-left md:text-right">
-                    <p className="text-xl md:text-2xl font-bold text-emerald-600">MK20,000</p>
-                    <p className="text-sm text-slate-600">per month after trial</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-slate-600">
-                  <CheckCircle className="h-4 w-4 text-emerald-600 flex-shrink-0" />
-                  <span>Full access to all features during trial</span>
-                </div>
-              </div>
               <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
                 <Link href="/register" className="flex-1">
                   <Button
                     size="lg"
                     className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-xl shadow-emerald-200/50 rounded-xl px-4 md:px-8 py-3 md:py-4 text-lg transform hover:scale-105 transition-all duration-300"
                   >
-                    Start Free Trial
+                    Get Started
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
@@ -358,116 +322,6 @@ export default function LandingPage() {
                 <p className="text-slate-600 leading-relaxed text-sm md:text-base">{feature.description}</p>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing Section */}
-      <section id="pricing" className="py-12 md:py-20 bg-gradient-to-br from-slate-50 to-emerald-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div
-            data-animate="fade-up"
-            className="opacity-0 translate-y-[30px] transition-all duration-1000 ease-out text-center mb-8 md:mb-16"
-          >
-            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-slate-900 mb-4">
-              Simple, Transparent Pricing
-            </h2>
-            <p className="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto px-4">
-              Start with a free trial, then continue with our affordable monthly subscription
-            </p>
-          </div>
-
-          <div className="max-w-4xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-              {/* Free Trial Card */}
-              <Card className="relative overflow-hidden border-2 border-emerald-200 shadow-xl transform hover:scale-105 transition-all duration-300">
-                <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-emerald-500 to-teal-600"></div>
-                <CardContent className="pt-6 md:pt-8 pb-6 md:pb-8">
-                  <div className="text-center mb-4 md:mb-6">
-                    <div className="bg-gradient-to-br from-emerald-100 to-teal-100 w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                      <Clock className="h-5 w-5 md:h-8 md:w-8 text-emerald-600" />
-                    </div>
-                    <h3 className="text-xl md:text-2xl font-bold text-slate-900 mb-2">Free Trial</h3>
-                    <div className="text-2xl md:text-4xl font-bold text-emerald-600 mb-2">10 Days</div>
-                    <p className="text-slate-600 text-sm md:text-base">No credit card required</p>
-                  </div>
-                  <ul className="space-y-2 md:space-y-3 mb-6 md:mb-8">
-                    <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 md:h-5 md:w-5 text-emerald-600 mr-2 md:mr-3 flex-shrink-0" />
-                      <span className="text-slate-700 text-sm md:text-base">Full access to all features</span>
-                    </li>
-                    <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 md:h-5 md:w-5 text-emerald-600 mr-2 md:mr-3 flex-shrink-0" />
-                      <span className="text-slate-700 text-sm md:text-base">Unlimited inventory items</span>
-                    </li>
-                    <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 md:h-5 md:w-5 text-emerald-600 mr-2 md:mr-3 flex-shrink-0" />
-                      <span className="text-slate-700 text-sm md:text-base">Advanced reporting</span>
-                    </li>
-                    <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 md:h-5 md:w-5 text-emerald-600 mr-2 md:mr-3 flex-shrink-0" />
-                      <span className="text-slate-700 text-sm md:text-base">24/7 support</span>
-                    </li>
-                  </ul>
-                  <Link href="/register" className="block">
-                    <Button className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl py-2 md:py-3 text-sm md:text-base">
-                      Start Free Trial
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-
-              {/* Monthly Subscription Card */}
-              <Card className="relative overflow-hidden border-2 border-emerald-400 shadow-xl transform hover:scale-105 transition-all duration-300">
-                <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-emerald-600 to-teal-700"></div>
-                <div className="absolute top-4 right-4">
-                  <Badge className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs">Most Popular</Badge>
-                </div>
-                <CardContent className="pt-6 md:pt-8 pb-6 md:pb-8">
-                  <div className="text-center mb-4 md:mb-6">
-                    <div className="bg-gradient-to-br from-emerald-100 to-teal-100 w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                      <CreditCard className="h-5 w-5 md:h-8 md:w-8 text-emerald-600" />
-                    </div>
-                    <h3 className="text-xl md:text-2xl font-bold text-slate-900 mb-2">Monthly Plan</h3>
-                    <div className="text-2xl md:text-4xl font-bold text-emerald-600 mb-2">MK20,000</div>
-                    <p className="text-slate-600 text-sm md:text-base">per month after trial</p>
-                  </div>
-                  <ul className="space-y-2 md:space-y-3 mb-6 md:mb-8">
-                    <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 md:h-5 md:w-5 text-emerald-600 mr-2 md:mr-3 flex-shrink-0" />
-                      <span className="text-slate-700 text-sm md:text-base">Everything in free trial</span>
-                    </li>
-                    <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 md:h-5 md:w-5 text-emerald-600 mr-2 md:mr-3 flex-shrink-0" />
-                      <span className="text-slate-700 text-sm md:text-base">Multi-user access</span>
-                    </li>
-                    <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 md:h-5 md:w-5 text-emerald-600 mr-2 md:mr-3 flex-shrink-0" />
-                      <span className="text-slate-700 text-sm md:text-base">Priority support</span>
-                    </li>
-                    <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 md:h-5 md:w-5 text-emerald-600 mr-2 md:mr-3 flex-shrink-0" />
-                      <span className="text-slate-700 text-sm md:text-base">Regular updates</span>
-                    </li>
-                  </ul>
-                  <Button
-                    variant="outline"
-                    className="w-full border-2 border-emerald-400 text-emerald-600 hover:bg-emerald-50 rounded-xl py-2 md:py-3 text-sm md:text-base bg-transparent"
-                  >
-                    Continue After Trial
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="text-center mt-8 md:mt-12 px-4">
-              <p className="text-slate-600 mb-4 text-sm md:text-base">
-                <strong>No setup fees • Cancel anytime • 99.9% uptime guarantee</strong>
-              </p>
-              <p className="text-xs md:text-sm text-slate-500">
-                All prices are in Malawi Kwacha (MK). Payment processing is secure and encrypted.
-              </p>
-            </div>
           </div>
         </div>
       </section>
@@ -564,28 +418,17 @@ export default function LandingPage() {
               Ready to Transform Your Pharmacy?
             </h2>
             <p className="text-lg md:text-xl mb-6 md:mb-8 max-w-3xl mx-auto opacity-90 leading-relaxed px-4">
-              Join hundreds of pharmacies across Malawi who trust MedTrack for their inventory management needs. Start
-              your 10-day free trial today - no credit card required.
+              Join hundreds of pharmacies across Malawi who trust MedTrack for their inventory management needs. 
             </p>
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 md:p-6 mb-6 md:mb-8 max-w-md mx-auto">
-              <div className="flex items-center justify-center space-x-3 md:space-x-4 mb-3 md:mb-4">
-                <Clock className="h-5 w-5 md:h-6 md:w-6" />
-                <span className="text-base md:text-lg font-semibold">10-Day Free Trial</span>
-              </div>
-              <p className="text-xs md:text-sm opacity-90">Then MK20,000/month • Cancel anytime</p>
-            </div>
             <Link href="/register">
               <Button
                 size="lg"
                 className="bg-white text-emerald-600 hover:bg-gray-100 px-6 md:px-8 py-3 md:py-4 text-base md:text-lg font-semibold rounded-xl shadow-xl transform hover:scale-105 transition-all duration-300"
               >
-                Start Free Trial Now
+                 Get Started
                 <ArrowRight className="ml-2 h-4 w-4 md:h-5 md:w-5" />
               </Button>
             </Link>
-            <p className="text-xs md:text-sm opacity-75 mt-3 md:mt-4">
-              ✓ No credit card required ✓ Full feature access ✓ Cancel anytime
-            </p>
           </div>
         </div>
       </section>
@@ -637,13 +480,8 @@ export default function LandingPage() {
               <h4 className="font-semibold mb-3 md:mb-4 text-sm md:text-base">Product</h4>
               <ul className="space-y-1 md:space-y-2 text-xs md:text-sm">
                 <li>
-                  <a href="#" className="text-slate-400 hover:text-white transition-colors duration-300">
+                  <a href="#features" className="text-slate-400 hover:text-white transition-colors duration-300">
                     Features
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="text-slate-400 hover:text-white transition-colors duration-300">
-                    Pricing
                   </a>
                 </li>
                 <li>
