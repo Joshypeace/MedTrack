@@ -61,10 +61,10 @@ export default function Header() {
             <h2 className="text-xl sm:text-2xl font-semibold text-slate-900">Dashboard</h2>
             <div className="flex items-center gap-2 flex-wrap">
               <p className="text-sm text-slate-500 hidden xs:block">Welcome, {userName}!</p>
-              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-xs py-1">
+              {/* <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-xs py-1">
                 <Crown className="h-3 w-3 mr-1 hidden xs:inline" />
                 7 days left
-              </Badge>
+              </Badge> */}
             </div>
           </div>
         </div>
@@ -82,30 +82,6 @@ export default function Header() {
               5
             </Badge>
           </Button>
-
-          {/* Upgrade Button - Hidden on mobile, shown on medium screens and up */}
-          <Link href="/billing">
-            <Button
-              variant="outline"
-              size="sm"
-              className="hidden sm:flex items-center gap-2 bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200 text-emerald-700 hover:from-emerald-100 hover:to-teal-100 rounded-xl"
-            >
-              <CreditCard className="h-4 w-4" />
-              <span className="hidden md:inline">Upgrade Plan</span>
-              <span className="md:hidden">Upgrade</span>
-            </Button>
-          </Link>
-
-          {/* Mobile Upgrade Button - Only show on small screens */}
-          <Link href="/billing" className="sm:hidden">
-            <Button
-              variant="outline"
-              size="icon"
-              className="bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200 text-emerald-700 hover:from-emerald-100 hover:to-teal-100 rounded-xl"
-            >
-              <CreditCard className="h-4 w-4" />
-            </Button>
-          </Link>
 
           {/* User Menu */}
           <DropdownMenu>

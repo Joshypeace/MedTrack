@@ -96,7 +96,7 @@ export default function DashboardPage() {
       <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
         <Header />
         <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
-          <Alert className="mb-6 border-amber-200 bg-amber-50">
+          {/* <Alert className="mb-6 border-amber-200 bg-amber-50">
             <CreditCard className="h-4 w-4 text-amber-600" />
             <AlertDescription className="flex items-center justify-between">
               <span className="text-amber-800">
@@ -109,7 +109,7 @@ export default function DashboardPage() {
                 </Button>
               </Link>
             </AlertDescription>
-          </Alert>
+          </Alert> */}
 
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
