@@ -178,7 +178,7 @@ export default function DashboardPage() {
               </Card>
             </Link>
 
-            <Link href="/billing">
+            <Link href="/sales">
               <Card className="card-enhanced hover:shadow-lg transition-shadow cursor-pointer border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
@@ -186,8 +186,8 @@ export default function DashboardPage() {
                       <CreditCard className="h-5 w-5 text-blue-600" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-blue-900">Manage Subscription</h3>
-                      <p className="text-sm text-blue-700">View billing and upgrade options</p>
+                      <h3 className="font-semibold text-blue-900">Manage Sales </h3>
+                      <p className="text-sm text-blue-700">View and manage your sales data</p>
                     </div>
                   </div>
                 </CardContent>
