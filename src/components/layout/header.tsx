@@ -119,12 +119,12 @@ export default function Header() {
                   Profile
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
+              {/* <DropdownMenuItem asChild>
                 <Link href="/billing" className="flex items-center cursor-pointer">
                   <CreditCard className="mr-2 h-4 w-4" />
                   Billing & Subscription
                 </Link>
-              </DropdownMenuItem>
+              </DropdownMenuItem> */}
               <DropdownMenuItem asChild>
                 <Link href="/settings" className="flex items-center cursor-pointer">
                   <Settings className="mr-2 h-4 w-4" />
