@@ -73,7 +73,8 @@ export async function POST(request: Request) {
           ownerName,
           email,
           phone,
-          location
+          location, 
+          
         }
       }),
       prisma.user.create({

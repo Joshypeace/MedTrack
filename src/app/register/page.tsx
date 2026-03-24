@@ -266,7 +266,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                 <Label>Security Verification *</Label>
                 <div className="flex justify-center">
                   <ReCAPTCHA
-                    sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" // Test key - replace with your actual key
+                    sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" 
                     onChange={setCaptchaValue}
                     theme="light"
                   />

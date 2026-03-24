@@ -1,3 +1,4 @@
+// app/page.tsx
 "use client"
 
 import { useEffect, useState } from "react"
@@ -13,6 +14,8 @@ import {
   Smartphone,
   Menu,
   X,
+  Search,
+  Navigation,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -144,13 +147,8 @@ export default function LandingPage() {
                 About
               </a>
               <Link href="/login">
-                {/* <Button variant="ghost" className="text-slate-600 hover:text-slate-900 transition-colors duration-300">
-                  Sign In
-                </Button> */}
-              </Link>
-              <Link href="/login">
                 <Button className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg shadow-emerald-200/50 rounded-xl transform hover:scale-105 transition-all duration-300">
-                 Sign In
+                  Sign In
                 </Button>
               </Link>
             </div>
@@ -194,14 +192,10 @@ export default function LandingPage() {
               >
                 About
               </a>
-              <Link href="/login" className="w-full">
-                {/* <Button
-                  variant="outline"
-                  className="w-full justify-start text-slate-600 hover:text-slate-900 transition-colors duration-300 border-slate-300"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
+              <Link href="/login" className="w-full" onClick={() => setIsMobileMenuOpen(false)}>
+                <Button className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white">
                   Sign In
-                </Button> */}
+                </Button>
               </Link>
             </div>
           </div>
@@ -220,32 +214,39 @@ export default function LandingPage() {
                 🏥 Trusted by 500+ Pharmacies in Malawi
               </Badge>
               <h1 className="text-3xl md:text-4xl lg:text-6xl font-bold text-slate-900 leading-tight mb-4 md:mb-6">
-                Modern Inventory Management for
+                Find Medicines Near You
                 <span className="block bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-                  Pharmacies
+                  Instantly
                 </span>
               </h1>
               <p className="text-lg md:text-xl text-slate-600 mb-6 md:mb-8 leading-relaxed">
-                Streamline your pharmaceutical operations with our comprehensive inventory management solution. Track
-                stock, manage sales, and get real-time insights - all in one place.
+                Search for any medicine and find nearby pharmacies that have it in stock. Get directions and travel distance instantly.
               </p>
+              
+              {/* Search Button */}
               <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
-                <Link href="/register" className="flex-1">
+                <Link href="/search" className="flex-1">
                   <Button
                     size="lg"
                     className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-xl shadow-emerald-200/50 rounded-xl px-4 md:px-8 py-3 md:py-4 text-lg transform hover:scale-105 transition-all duration-300"
                   >
-                    Get Started
+                    <Search className="mr-2 h-5 w-5" />
+                    Search Medicine
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="flex-1 rounded-xl px-4 md:px-8 py-3 md:py-4 text-lg border-2 border-emerald-300 hover:border-emerald-400 hover:bg-emerald-50 bg-transparent transition-all duration-300"
-                >
-                  Learn More
-                </Button>
+              </div>
+
+              <div className="mt-6 flex flex-col sm:flex-row gap-3 md:gap-4">
+                <Link href="/register" className="flex-1">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="w-full rounded-xl px-4 md:px-8 py-3 md:py-4 text-lg border-2 border-emerald-300 hover:border-emerald-400 hover:bg-emerald-50 bg-transparent transition-all duration-300"
+                  >
+                    Register Your Pharmacy
+                  </Button>
+                </Link>
               </div>
             </div>
             <div
@@ -260,11 +261,11 @@ export default function LandingPage() {
               <div className="absolute -bottom-4 -left-2 md:-bottom-6 md:-left-6 bg-white p-3 md:p-4 rounded-xl shadow-xl transform hover:scale-110 transition-transform duration-300 max-w-[180px] md:max-w-none">
                 <div className="flex items-center">
                   <div className="bg-gradient-to-br from-emerald-100 to-teal-100 p-2 md:p-3 rounded-full mr-2 md:mr-3">
-                    <ChartLine className="h-4 w-4 md:h-6 md:w-6 text-emerald-600" />
+                    <Navigation className="h-4 w-4 md:h-6 md:w-6 text-emerald-600" />
                   </div>
                   <div>
-                    <p className="font-bold text-slate-800 text-sm md:text-base">Real-time Analytics</p>
-                    <p className="text-xs md:text-sm text-slate-600">Track sales & inventory</p>
+                    <p className="font-bold text-slate-800 text-sm md:text-base">Nearby Pharmacies</p>
+                    <p className="text-xs md:text-sm text-slate-600">Find medicines close to you</p>
                   </div>
                 </div>
               </div>
