@@ -46,9 +46,14 @@ model Pharmacy {
   email         String    @unique
   phone         String
   location      String
+  latitude      Float
+  longitude     Float
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  
   users         User[]
+  inventory     InventoryItem[]
+
   BackupSettings BackupSettings[]
   SecuritySettings SecuritySettings[]
   AlertSettings AlertSettings[]
@@ -57,7 +62,10 @@ model Pharmacy {
 
 model InventoryItem {
   id         String    @id @default(cuid())
-  name       String
+
+  medicineId String
+  medicine   Medicine @relation(fields: [medicineId], references: [id])
+
   category   String
   quantity   Int
   price      Float
@@ -65,7 +73,19 @@ model InventoryItem {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   batch      String?
+  
+  pharmacyId String
+  pharmacy   Pharmacy @relation(fields: [pharmacyId], references: [id])
+ 
+
   sales      Sale[]
+}
+
+model Medicine {
+  id        String @id @default(cuid())
+  name      String @unique
+
+  inventory InventoryItem[]
 }
 
 model Sale {
