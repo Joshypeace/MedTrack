@@ -46,14 +46,14 @@ export async function GET(request: Request) {
     })
 
     // Calculate totals
-    const totalRevenue = sales.reduce((sum: number, sale: Sale) => sum + sale.totalPrice, 0)
-    const totalCOGS = sales.reduce((sum: number, sale: Sale) => sum + (sale.item.price * sale.quantity), 0)
-    const totalExpenses = expenses.reduce((sum: number, expense: Expense) => sum + expense.amount, 0)
+    const totalRevenue = sales.reduce((sum, sale) => sum + sale.totalPrice, 0)
+    const totalCOGS = sales.reduce((sum, sale) => sum + (sale.item.price * sale.quantity), 0)
+    const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0)
     const grossProfit = totalRevenue - totalCOGS
     const netProfit = grossProfit - totalExpenses
 
     // Group expenses by category
-    const expensesByCategory = expenses.reduce((acc: Record<string, number>, expense: Expense) => {
+    const expensesByCategory = expenses.reduce((acc: Record<string, number>, expense) => {
       if (!acc[expense.category]) {
         acc[expense.category] = 0
       }
@@ -64,8 +64,8 @@ export async function GET(request: Request) {
     return NextResponse.json({
       revenue: {
         totalSales: totalRevenue,
-        prescriptionSales: sales.filter((s: Sale) => s.prescriptionId).reduce((sum: number, sale: Sale) => sum + sale.totalPrice, 0),
-        otcSales: sales.filter((s: Sale) => !s.prescriptionId).reduce((sum: number, sale: Sale) => sum + sale.totalPrice, 0),
+        prescriptionSales: sales.filter((s) => s.prescriptionId).reduce((sum, sale) => sum + sale.totalPrice, 0),
+        otcSales: sales.filter((s) => !s.prescriptionId).reduce((sum, sale) => sum + sale.totalPrice, 0),
       },
       costOfGoodsSold: {
         medicationCosts: totalCOGS,

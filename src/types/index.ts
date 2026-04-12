@@ -27,7 +27,7 @@ export type TopDrugGroup = {
 
  export type InventoryItem = {
   id: string
-  name: string
+  medicine: string
   batch: string | null
   price: number
   quantity: number

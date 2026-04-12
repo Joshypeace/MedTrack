@@ -156,8 +156,8 @@ export async function GET() {
           where: { id: sale.itemId }
         })
         return {
-          name: item?.name || 'Unknown',
-          quantity: `${sale._sum.quantity} ${item?.name?.includes('tablet') ? 'tablets' : 'units'}`,
+          name: item?.medicineId || 'Unknown',
+          quantity: `${sale._sum.quantity} ${item?.medicineId?.includes('tablet') ? 'tablets' : 'units'}`,
           trend: '+0%'
         }
       })
@@ -180,8 +180,8 @@ export async function GET() {
     })
 
     // Explicitly type the formattedAlerts mapping
-    const formattedAlerts = stockAlerts.map((item: { id: string; name: string; quantity: number; expiryDate: Date | null }) => ({
-      name: item.name,
+    const formattedAlerts = stockAlerts.map((item) => ({
+      name: item.medicineId,
       status: item.quantity < 5 ? 'Low Stock' : 'Expires Soon',
       level: item.quantity < 5 
         ? `${item.quantity} remaining` 

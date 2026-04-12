@@ -17,6 +17,8 @@ interface InventoryItem {
   price: number;
   expiryDate?: Date;
   batch?: string;
+  medicineId: string;
+  pharmacyId: string;
 }
 
 interface ImportResult {
@@ -77,14 +79,11 @@ export async function POST(request: NextRequest) {
     for (const [index, record] of records.entries()) {
       try {
         // Map CSV record to inventory item structure using the provided mapping
-        const inventoryItem = mapRecordToInventoryItem(record, columnMapping);
+        const inventoryItem = mapRecordToInventoryItem(record, columnMapping, session.user.id);
         
         // Save to database using Prisma
         await prisma.inventoryItem.create({
-          data: {
-            ...inventoryItem,
-            // Add user/pharmacy relationship if needed
-          }
+          data: inventoryItem
         });
         
         // Create activity log
@@ -112,7 +111,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function mapRecordToInventoryItem(record: CsvRecord, columnMapping?: ColumnMapping): InventoryItem {
+function mapRecordToInventoryItem(record: CsvRecord, columnMapping?: ColumnMapping, userId?: string): InventoryItem {
   // Helper function to get field value with better error reporting
   const getFieldValue = (field: keyof ColumnMapping, required: boolean = false): string => {
     // Use mapped column if provided
@@ -189,6 +188,8 @@ function mapRecordToInventoryItem(record: CsvRecord, columnMapping?: ColumnMappi
       price,
       expiryDate,
       batch,
+      medicineId: '', // Update with actual medicine lookup logic
+      pharmacyId: '', // Update with actual pharmacy lookup logic
     };
   } catch (error: unknown) {
     // Add more context to the error message

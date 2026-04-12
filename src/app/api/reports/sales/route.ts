@@ -36,8 +36,8 @@ export async function GET(request: Request) {
       orderBy: { createdAt: 'desc' },
     })
 
-    // Get total revenue`
-    const totalRevenue = sales.reduce((sum: number, sale: Sale) => sum + sale.totalPrice, 0)
+    // Get total revenue
+    const totalRevenue = sales.reduce((sum: number, sale: any) => sum + sale.totalPrice, 0)
 
     // Get sales by month
     const salesByMonth = await prisma.sale.groupBy({
@@ -76,9 +76,12 @@ export async function GET(request: Request) {
       topSellingItems.map(async (item: TopDrugGroup) => {
         const itemDetails = await prisma.inventoryItem.findUnique({
           where: { id: item.itemId },
+          include: {
+            medicine: true,
+          },
         })
         return {
-          name: itemDetails?.name || 'Unknown Item',
+          name: itemDetails?.medicine?.name || 'Unknown Item',
           quantity: item._sum.quantity || 0,
           revenue: item._sum.totalPrice || 0,
         }
@@ -114,7 +117,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       totalRevenue,
-      totalItemsSold: sales.reduce((sum: number, sale: Sale) => sum + sale.quantity, 0),
+      totalItemsSold: sales.reduce((sum: number, sale: any) => sum + sale.quantity, 0),
       totalTransactions: sales.length,
       salesByMonth: salesByMonth.map((sale: { createdAt: Date; _sum: { totalPrice: number | null; quantity: number | null } }) => ({
         month: sale.createdAt.toLocaleString('default', { month: 'short' }),

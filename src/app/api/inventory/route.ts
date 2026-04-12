@@ -23,7 +23,7 @@ export async function GET(request: Request) {
     
     if (searchTerm) {
       whereClause.OR = [
-        { name: { contains: searchTerm, mode: 'insensitive' } },
+        { medicine: { name: { contains: searchTerm, mode: 'insensitive' } } },
         { category: { contains: searchTerm, mode: 'insensitive' } },
       ]
     }
@@ -37,7 +37,7 @@ export async function GET(request: Request) {
       where: whereClause,
       select: {
         id: true,
-        name: true,
+        medicine: true,
         batch: true,
         quantity: true,
         expiryDate: true,
@@ -48,9 +48,9 @@ export async function GET(request: Request) {
     })
 
     // Transform data
-    const transformed = items.map((item: InventoryItem) => ({
+    const transformed = items.map((item) => ({
       id: item.id,
-      name: item.name,
+      name: item.medicine.name,
       batch: item.batch || item.id.slice(0, 6).toUpperCase(),
       quantity: item.quantity,
       expiry: item.expiryDate?.toISOString().split('T')[0] || 'N/A',
@@ -83,12 +83,13 @@ export async function POST(request: Request) {
   try {
     const newItem = await prisma.inventoryItem.create({
       data: {
-        name: body.name,
+        medicine: body.name,
         batch: body.batch || null,
         category: body.category,
         quantity: Number(body.quantity),
         price: Number(body.price) || 0,
         expiryDate: body.expiry ? new Date(body.expiry) : null,
+        pharmacy: { connect: { id: session.user.pharmacyId } },
       },
     })
 
