@@ -549,7 +549,7 @@ export default function SearchPage() {
                     No Pharmacies Found
                   </h3>
                   <p className="text-slate-600 mb-6">
-                    We couldn't find any pharmacies with {medicine} in stock within {filters.maxDistance}km.
+                    We couldn&apos;'t find any pharmacies with {medicine} in stock within {filters.maxDistance}km.
                   </p>
                   <Button
                     onClick={() => setFilters({ ...filters, maxDistance: 20 })}
