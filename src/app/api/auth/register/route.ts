@@ -73,8 +73,9 @@ export async function POST(request: Request) {
           ownerName,
           email,
           phone,
-          location, 
-          
+          location,
+          latitude: 0,
+          longitude: 0
         }
       }),
       prisma.user.create({
