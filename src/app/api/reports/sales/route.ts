@@ -37,7 +37,7 @@ export async function GET(request: Request) {
     })
 
     // Get total revenue
-    const totalRevenue = sales.reduce((sum: number, sale: any) => sum + sale.totalPrice, 0)
+    const totalRevenue = sales.reduce((sum: number, sale: Prisma.SaleGetPayload<Prisma.SaleFindManyArgs>) => sum + sale.totalPrice, 0)
 
     // Get sales by month
     const salesByMonth = await prisma.sale.groupBy({
@@ -117,7 +117,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       totalRevenue,
-      totalItemsSold: sales.reduce((sum: number, sale: any) => sum + sale.quantity, 0),
+      totalItemsSold: sales.reduce((sum: number, sale: Prisma.SaleGetPayload<Prisma.SaleFindManyArgs>) => sum + sale.quantity, 0),
       totalTransactions: sales.length,
       salesByMonth: salesByMonth.map((sale: { createdAt: Date; _sum: { totalPrice: number | null; quantity: number | null } }) => ({
         month: sale.createdAt.toLocaleString('default', { month: 'short' }),

@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import Sidebar from "@/components/layout/sidebar"
 import Header from "@/components/layout/header"
+import { NameType, ValueType } from 'recharts/types/component/DefaultTooltipContent';
 import {
   Bar,
   BarChart,
@@ -30,6 +31,7 @@ import {
 import { toast } from "sonner"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable";
+import { Formatter } from "recharts/types/component/DefaultTooltipContent"
 
 
 interface SalesData {
@@ -814,8 +816,8 @@ export default function ReportsPage() {
                                 ))}
                               </Pie>
                               <Tooltip 
-                                formatter={(value: number) => [
-                                  formatCurrency(value), 
+                                formatter={(value: ValueType | undefined) => [
+                                  formatCurrency(typeof value === 'number' ? value : 0), 
                                   'Amount'
                                 ]} 
                               />

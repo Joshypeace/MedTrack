@@ -48,7 +48,7 @@ export default function SalesPage() {
           // Ensure all medicines have required fields with fallbacks
           const medicinesWithDefaults = data.map((medicine: Prisma.InventoryItemCreateInput) => ({
             id: medicine.id || '',
-            name: medicine.name || 'Unknown Medicine',
+            name: medicine.medicine || 'Unknown Medicine',
             price: medicine.price ?? 0, // Fallback to 0 if price is undefined
             quantity: medicine.quantity || 0,
             expiryDate: medicine.expiryDate || null,
