@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { WeeklySale, StockDistributionItem, TopDrugGroup } from "@/types/index";
+import { WeeklySale, StockDistributionItem, TopDrugGroup, InventoryItem } from "@/types/index";
 
 
 
@@ -164,7 +164,7 @@ export async function GET() {
     )
 
     // Get stock alerts - explicitly type the result
-    const stockAlerts = await prisma.inventoryItem.findMany({
+    const stockAlerts: InventoryItem[] = await prisma.inventoryItem.findMany({
       where: {
         OR: [
           { quantity: { lt: 5 } },
@@ -180,8 +180,8 @@ export async function GET() {
     })
 
     // Explicitly type the formattedAlerts mapping
-    const formattedAlerts = stockAlerts.map((item) => ({
-      name: item.medicineId,
+    const formattedAlerts = stockAlerts.map((item: InventoryItem) => ({
+      name: item.medicine,
       status: item.quantity < 5 ? 'Low Stock' : 'Expires Soon',
       level: item.quantity < 5 
         ? `${item.quantity} remaining` 
