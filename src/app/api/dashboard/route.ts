@@ -164,7 +164,7 @@ export async function GET() {
     )
 
     // Get stock alerts - explicitly type the result
-    const stockAlerts: InventoryItem[] = await prisma.inventoryItem.findMany({
+    const stockAlertsRaw = await prisma.inventoryItem.findMany({
       where: {
         OR: [
           { quantity: { lt: 5 } },
@@ -178,6 +178,17 @@ export async function GET() {
       },
       take: 4
     })
+
+    // Map database fields to InventoryItem type
+    const stockAlerts: InventoryItem[] = stockAlertsRaw.map(item => ({
+      id: item.id,
+      medicine: item.medicineId,
+      batch: item.batch,
+      price: item.price,
+      quantity: item.quantity,
+      expiryDate: item.expiryDate,
+      category: item.category
+    }))
 
     // Explicitly type the formattedAlerts mapping
     const formattedAlerts = stockAlerts.map((item: InventoryItem) => ({

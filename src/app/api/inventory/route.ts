@@ -48,9 +48,9 @@ export async function GET(request: Request) {
     })
 
     // Transform data
-    const transformed = items.map((item: InventoryItem) => ({
+    const transformed = items.map((item) => ({
       id: item.id,
-      name: item.medicine,
+      name: item.medicine.name,
       batch: item.batch || item.id.slice(0, 6).toUpperCase(),
       quantity: item.quantity,
       expiry: item.expiryDate?.toISOString().split('T')[0] || 'N/A',
