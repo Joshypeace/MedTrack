@@ -58,6 +58,10 @@ model Pharmacy {
   SecuritySettings SecuritySettings[]
   AlertSettings AlertSettings[]
   PharmacySettings PharmacySettings[]
+
+  medicineOrders MedicineOrder[]
+
+  pharmacyCommunications PharmacyCommunication[]
 }
 
 model InventoryItem {
@@ -86,6 +90,8 @@ model Medicine {
   name      String @unique
 
   inventory InventoryItem[]
+
+  medicineOrders MedicineOrder[]
 }
 
 model Sale {
@@ -191,6 +197,114 @@ model BackupSettings {
   pharmacy          Pharmacy @relation(fields: [pharmacyId], references: [id])
 }
 
+// Add these models to your existing schema
+
+model MedicineOrder {
+  id                String            @id @default(cuid())
+  orderNumber       String            @unique
+  customerName      String
+  customerPhone     String
+  customerEmail     String?
+  status            OrderStatus       @default(PENDING)
+  reservationExpiry DateTime          // When reservation expires if not collected
+  
+  // Medicine Details
+  medicineId        String
+  medicine          Medicine          @relation(fields: [medicineId], references: [id])
+  pharmacyId        String
+  pharmacy          Pharmacy          @relation(fields: [pharmacyId], references: [id])
+  quantity          Int
+  totalPrice        Float
+  
+  // Communication tracking
+  confirmedVia      ConfirmationMethod? // How order was confirmed
+  confirmedAt       DateTime?
+  confirmedBy       String?            // Staff who confirmed
+  
+  // Collection tracking
+  collectedAt       DateTime?
+  collectedBy       String?            // Staff who marked as collected
+  
+  // Notes
+  notes             String?
+  
+  // Timestamps
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  
+  // Relations
+  messages          OrderMessage[]
+  reservationHistory ReservationHistory[]
+  
+  @@index([pharmacyId, status])
+  @@index([medicineId, status])
+  @@index([orderNumber])
+  @@index([reservationExpiry])
+}
+
+model OrderMessage {
+  id            String   @id @default(cuid())
+  orderId       String
+  order         MedicineOrder @relation(fields: [orderId], references: [id])
+  message       String
+  isFromCustomer Boolean  @default(false)
+  isFromPharmacy Boolean  @default(false)
+  read          Boolean  @default(false)
+  readAt        DateTime?
+  createdAt     DateTime @default(now())
+  
+  @@index([orderId, createdAt])
+}
+
+model ReservationHistory {
+  id            String   @id @default(cuid())
+  orderId       String
+  order         MedicineOrder @relation(fields: [orderId], references: [id])
+  status        OrderStatus
+  notes         String?
+  changedBy     String
+  changedAt     DateTime @default(now())
+  
+  @@index([orderId])
+}
+
+model PharmacyCommunication {
+  id            String   @id @default(cuid())
+  pharmacyId    String
+  pharmacy      Pharmacy @relation(fields: [pharmacyId], references: [id])
+  
+  // Contact preferences
+  whatsappNumber String?
+  autoConfirmOrders Boolean @default(false)
+  reservationDuration Int @default(120) // Minutes to hold reservation
+  
+  // Notification settings
+  emailNotifications Boolean @default(true)
+  smsNotifications Boolean @default(false)
+  inAppNotifications Boolean @default(true)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@unique([pharmacyId])
+}
+
+enum OrderStatus {
+  PENDING          // Awaiting pharmacy confirmation
+  CONFIRMED        // Pharmacy confirmed, medicine reserved
+  READY_FOR_COLLECTION // Customer can collect
+  COLLECTED        // Customer picked up
+  CANCELLED        // Order cancelled
+  EXPIRED          // Reservation expired
+}
+
+enum ConfirmationMethod {
+  PHONE_CALL
+  WHATSAPP
+  SMS
+  IN_APP
+  EMAIL
+}
 
 
 
